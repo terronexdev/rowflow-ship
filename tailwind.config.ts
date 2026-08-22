@@ -24,8 +24,9 @@ const config: Config = {
   },
   plugins: [],
   corePlugins: {
-    preflight: false,
+    preflight: false, // Disable Tailwind's reset to avoid conflicts with MUI
   },
 };
 
 export default config;
+

@@ -1,0 +1,1539 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// Authentication Models
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String?   // Hashed with bcrypt (optional for OAuth users)
+  role          Role      @default(USER)
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  projects      Project[]
+  assignedParcels Parcel[] @relation("AssignedParcels")
+  subscription  Subscription?
+  roleAssignments     RoleAssignment[]
+  costEntries         ParcelCostEntry[]
+  compensationOffers  CompensationOffer[] @relation("CompensationCreatedBy")
+  authoredNotes       Note[] @relation("NoteAuthor")
+  uploadedDocuments   Document[] @relation("DocumentUploader")
+  contactLogsCreated  ContactLog[] @relation("ContactLogCreatedBy")
+  projectMemberships  ProjectMember[]
+  invitesSent         ProjectInvite[] @relation("InvitesSent")
+  auditLogs           AuditLog[]
+  /// Dashboard layout, last seen activity, etc.
+  uiPrefs             Json?
+  lastSeenActivityAt  DateTime?
+
+  @@map("users")
+}
+
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ============================================
+// Subscription Models
+// ============================================
+
+model Subscription {
+  id                       String             @id @default(cuid())
+  userId                   String             @unique
+  stripeCustomerId         String?            @unique
+  stripeSubscriptionId     String?            @unique
+  stripePriceId            String?
+  stripeCurrentPeriodEnd   DateTime?
+  tier                     SubscriptionTier   @default(FREE)
+  status                   SubscriptionStatus @default(ACTIVE)
+  projectLimit             Int                @default(2)
+  parcelLimitPerProject    Int                @default(50)
+  userLimit                Int                @default(1)
+  storageLimit             Int                @default(0) // in MB
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+enum Role {
+  USER
+  AGENT
+  PROJECT_MANAGER
+  ADMIN
+}
+
+enum ParcelPriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+enum MilestoneStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETE
+  BLOCKED
+}
+
+enum SubscriptionTier {
+  FREE
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+  INCOMPLETE
+}
+
+// ============================================
+// Core Application Models
+// ============================================
+
+model Project {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  status      String    @default("Active")
+  clientName  String?
+  contractNumber String?
+  workOrderNumber String?
+  projectType String?
+  /// Business-facing Project ID (not the cuid)
+  projectCode String?
+  landBudget  Decimal?  @db.Decimal(12,2)
+  laborBudget Decimal?  @db.Decimal(12,2)
+  centerlineData Json?   // GeoJSON linework for alignment/route
+  rowExtents Json?       // GeoJSON corridor/ROW extents
+  scopeEstimateJson Json?    // ROWScope seed snapshot (take + budget, not offers)
+  startDate   DateTime?
+  endDate     DateTime?
+  offerRangeLowPct  Decimal @default(0.80) @db.Decimal(5, 4)
+  offerRangeHighPct Decimal @default(1.50) @db.Decimal(5, 4)
+  /// IRS-style mileage rate snapshot default for new mileage lines ($/mile)
+  mileageRate       Decimal @default(0.70) @db.Decimal(6, 4)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  userId      String
+
+  // Relations
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parcels Parcel[]
+  layers ProjectLayer[]
+  milestones Milestone[]
+  payments Payment[]
+  landPaymentMatrix LandPaymentMatrix?
+  roleAssignments   RoleAssignment[]
+  roleRates         RoleRate[]
+  budgetLines       BudgetLine[]
+  schedulePhases    ProjectSchedulePhase[]
+  permits           Permit[]
+  notes             Note[]
+  documents         Document[]
+  members           ProjectMember[]
+  invites           ProjectInvite[]
+  auditLogs         AuditLog[]
+  existingRights    ExistingRight[]
+
+  @@index([userId])
+  @@index([projectCode])
+  @@map("projects")
+}
+
+model ProjectLayer {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  datasetId   String?
+  sourceUrl   String?
+  kind        String   @default("reference")
+  geometryType String?
+  featureCount Int     @default(0)
+  data        Json
+  visible     Boolean  @default(true)
+  opacity     Float    @default(0.55)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([datasetId])
+  @@map("project_layers")
+}
+
+model Parcel {
+  id           String       @id @default(cuid())
+  projectId    String
+  parcelNumber String?
+  pin          String?
+  /// Project tract / easement file # (this job) — not an existing-rights instrument number
+  easementNumber String?
+  /// This project's utility plant IDs on the take (poles, towers, etc.)
+  newStructureNumbers String?
+  /// In-place / foreign utility plant IDs (often under existing easements)
+  existingStructureNumbers String?
+  owner        String?
+  ownerAddress String?
+  ownerCity    String?
+  ownerState   String?
+  ownerZip     String?
+  ownerPhone   String?
+  ownerEmail   String?
+  legalDesc              String?
+  county                 String?
+  propertyAddress        String?
+  state                  String?
+  status                 ParcelStatus              @default(NOT_STARTED)
+  titleStatus            TitleStatus               @default(NOT_STARTED)
+  surveyStatus           SurveyStatus              @default(NOT_STARTED)
+  appraisalStatus        AppraisalStatus           @default(NOT_STARTED)
+  acquisitionStatus      AcquisitionStatus          @default(NOT_STARTED)
+  condemnationStatus     CondemnationStatus         @default(NOT_STARTED)
+  damagesStatus          DamagesStatus             @default(NOT_STARTED)
+  specialConditionsStatus SpecialConditionsStatus  @default(NOT_STARTED)
+  /// Research completeness for existing rights on this tract
+  existingRightsStatus   ExistingRightsStatus      @default(NOT_REVIEWED)
+  /// Corridor role: greenfield / brownfield / 3rd-party access
+  parcelClass            ParcelClass               @default(UNKNOWN)
+  /// Encroachment research / disposition rollup for this tract
+  encroachmentStatus     EncroachmentStatus        @default(NOT_REVIEWED)
+  sequence               Int?
+  milepost               Float?
+  geometry               Json?                      // GeoJSON geometry
+  acreage                Float?
+  totalAcres             Decimal?                   @db.Decimal(10,3)
+  easementAcres          Decimal?                   @db.Decimal(10,3)
+  tceAcres               Decimal?                   @db.Decimal(10,3)
+  stationStart           String?
+  stationEnd             String?
+  priority               ParcelPriority             @default(NORMAL)
+  assignedAgentId        String?
+  dataSource             String                     @default("MANUAL")
+  ptsStatus              PtsStatus                  @default(NOT_STARTED)
+  /// Parcel-level permitting phase (Color-by / bulk). Child Permit rows hold filings.
+  permitStatus           PermitPhaseStatus          @default(NOT_STARTED)
+  /// Project-wide attention pin (sort / filters). Not a land fact.
+  bookmarked             Boolean                    @default(false)
+
+  // Titled Owner (owner of record — separate from county GIS owner*)
+  titledOwnerName        String?
+  titledOwnerAddress     String?
+  titledOwnerCity        String?
+  titledOwnerState       String?
+  titledOwnerZip         String?
+  titledOwnerPhone       String?
+  titledOwnerEmail       String?
+  titledOwnerTaxId       String?
+  titledOwnerDistrict    String?
+  titledLegalDescription String?
+  easementAcresToAcquire Decimal?                   @db.Decimal(10,3)
+
+  // Tenant
+  tenantName             String?
+  tenantAddress          String?
+  tenantPhone            String?
+  tenantEmail            String?
+  tenantNotes            String?
+
+  // Last offer cache for side panel
+  lastCompensationTotal        Decimal? @db.Decimal(12,2)
+  lastCompensationLandUse      String?
+  lastCompensationOutsideRange Boolean  @default(false)
+
+  /// Survey / take classification (source of truth for compensation)
+  matrixLandUse                LandUseCategory?
+  matrixLandUseLabel           String?
+
+  createdAt              DateTime                   @default(now())
+  updatedAt              DateTime                   @updatedAt
+
+  // Relations
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignedAgent User?   @relation("AssignedParcels", fields: [assignedAgentId], references: [id])
+  notes     Note[]
+  documents Document[]
+  titleTracking TitleTracking[]
+  surveyTracking SurveyTracking[]
+  appraisalTracking AppraisalTracking[]
+  acquisitionTracking AcquisitionTracking[]
+  condemnationTracking CondemnationTracking[]
+  damageClaims DamageClaim[]
+  payments Payment[]
+  contactLogs ContactLog[]
+  compensationOffers CompensationOffer[]
+  costEntries        ParcelCostEntry[]
+  labels             ParcelLabel[]
+  permits            Permit[]
+  existingRightLinks ExistingRightParcel[]
+  encroachments      ParcelEncroachment[]
+
+  @@index([projectId])
+  @@index([status])
+  @@index([titleStatus])
+  @@index([damagesStatus])
+  @@index([specialConditionsStatus])
+  @@index([existingRightsStatus])
+  @@index([parcelClass])
+  @@index([encroachmentStatus])
+  @@index([ptsStatus])
+  @@index([permitStatus])
+  @@index([bookmarked])
+  @@index([priority])
+  @@index([county])
+  @@index([assignedAgentId])
+  @@map("parcels")
+}
+
+/// Fixed constraint / attention labels (map hatch). Multi per parcel; optional note.
+model ParcelLabel {
+  id        String          @id @default(cuid())
+  parcelId  String
+  code      ParcelLabelCode
+  note      String?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  parcel Parcel @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+
+  @@unique([parcelId, code])
+  @@index([parcelId])
+  @@index([code])
+  @@map("parcel_labels")
+}
+
+model Note {
+  id        String         @id @default(cuid())
+  /// Exactly one of parcelId | projectId | permitId (enforced in app + optional DB check)
+  parcelId  String?
+  projectId String?
+  permitId  String?
+  content   String
+  category  StatusCategory @default(GENERAL)
+  authorId  String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  parcel  Parcel?  @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  permit  Permit?  @relation(fields: [permitId], references: [id], onDelete: Cascade)
+  author  User?    @relation("NoteAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([parcelId])
+  @@index([projectId])
+  @@index([permitId])
+  @@index([category])
+  @@map("notes")
+}
+
+model Document {
+  id           String         @id @default(cuid())
+  parcelId     String?
+  projectId    String?
+  permitId     String?
+  name         String
+  type         String
+  category     StatusCategory @default(GENERAL)
+  url          String
+  size         Int
+  mimeType     String
+  label        String?
+  uploadedById String?
+  createdAt    DateTime       @default(now())
+
+  parcel     Parcel?  @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  project    Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  permit     Permit?  @relation(fields: [permitId], references: [id], onDelete: Cascade)
+  uploadedBy User?    @relation("DocumentUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([parcelId])
+  @@index([projectId])
+  @@index([permitId])
+  @@index([category])
+  @@map("documents")
+}
+
+// ============================================
+// ROWFlow Lifecycle Models
+// ============================================
+
+model Milestone {
+  id            String          @id @default(cuid())
+  projectId     String
+  name          String
+  description   String?
+  targetDate    DateTime?
+  completedDate DateTime?
+  status        MilestoneStatus @default(NOT_STARTED)
+  sortOrder     Int             @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([targetDate])
+  @@map("milestones")
+}
+
+model TitleTracking {
+  id               String          @id @default(cuid())
+  parcelId         String
+  company          String?
+  searchType       TitleSearchType @default(FULL)
+  orderDate        DateTime?
+  receivedDate     DateTime?
+  curativeIssues   String?
+  curativeComplete DateTime?
+  commitmentDate   DateTime?
+  policyDate       DateTime?
+  cost             Decimal?        @db.Decimal(8,2)
+  bpid             String?
+  workOrder        String?
+  status           TitleStatus     @default(NOT_STARTED)
+  notes            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  parcel Parcel @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+
+  @@index([parcelId])
+  @@index([status])
+  @@map("title_tracking")
+}
+
+model SurveyTracking {
+  id             String       @id @default(cuid())
+  parcelId       String
+  company        String?
+  surveyType     SurveyType   @default(BOUNDARY)
+  acres          Decimal?     @db.Decimal(10,3)
+  orderDate      DateTime?
+  fieldStartDate DateTime?
+  fieldEndDate   DateTime?
+  stakingDate    DateTime?
+  draftDate      DateTime?
+  finalDate      DateTime?
+  cost           Decimal?     @db.Decimal(8,2)
+  bpid           String?
+  workOrder      String?
+  monumentSet    Boolean      @default(false)
+  status         SurveyStatus @default(NOT_STARTED)
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  parcel Parcel @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+
+  @@index([parcelId])
+  @@index([status])
+  @@map("survey_tracking")
+}
+
+model AppraisalTracking {
+  id             String          @id @default(cuid())
+  parcelId       String
+  appraiser      String?
+  appraisalType  AppraisalType   @default(FEE_SIMPLE)
+  scope          String?
+  orderDate      DateTime?
+  inspectionDate DateTime?
+  draftDate      DateTime?
+  reviewDate     DateTime?
+  finalDate      DateTime?
+  beforeValue    Decimal?        @db.Decimal(12,2)
+  afterValue     Decimal?        @db.Decimal(12,2)
+  easementValue  Decimal?        @db.Decimal(12,2)
+  damageValue    Decimal?        @db.Decimal(12,2)
+  totalValue     Decimal?        @db.Decimal(12,2)
+  cost           Decimal?        @db.Decimal(8,2)
+  bpid           String?
+  workOrder      String?
+  status         AppraisalStatus @default(NOT_STARTED)
+  notes          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  parcel Parcel @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+
+  @@index([parcelId])
+  @@index([status])
+  @@map("appraisal_tracking")
+}
+
+model AcquisitionTracking {
+  id                 String            @id @default(cuid())
+  parcelId           String
+  acquisitionType    AcquisitionType   @default(EASEMENT)
+  tier1Offer         Decimal?          @db.Decimal(12,2) // 80%
+  tier1Date          DateTime?
+  tier1Response      OfferResponse?
+  tier2Offer         Decimal?          @db.Decimal(12,2) // 100%
+  tier2Date          DateTime?
+  tier2Response      OfferResponse?
+  tier3Offer         Decimal?          @db.Decimal(12,2) // 125%
+  tier3Date          DateTime?
+  tier3Response      OfferResponse?
+  tier4Offer         Decimal?          @db.Decimal(12,2) // 150%
+  tier4Date          DateTime?
+  tier4Response      OfferResponse?
+  aboveTierOffer     Decimal?          @db.Decimal(12,2)
+  approvalRequested  DateTime?
+  approvedBy         String?
+  approvalDate       DateTime?
+  counterOfferAmount Decimal?          @db.Decimal(12,2)
+  counterOfferDate   DateTime?
+  finalAmount        Decimal?          @db.Decimal(12,2)
+  agreementDate      DateTime?
+  closingDate        DateTime?
+  recordingDate      DateTime?
+  documentNumber     String?
+  agentFee           Decimal?          @db.Decimal(8,2)
+  status             AcquisitionStatus @default(NOT_STARTED)
+  notes              String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  parcel Parcel @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+
+  @@index([parcelId])
+  @@index([status])
+  @@map("acquisition_tracking")
+}
+
+model CondemnationTracking {
+  id                   String             @id @default(cuid())
+  parcelId             String
+  caseNumber           String?
+  court                String?
+  courtDistrict        String?
+  courtAddress         String?
+  judge                String?
+  /// Our / condemnor counsel
+  counsel              String?
+  counselFirm          String?
+  counselPhone         String?
+  counselEmail         String?
+  /// Landowner opposing counsel
+  opposingCounsel      String?
+  opposingCounselFirm  String?
+  opposingCounselPhone String?
+  opposingCounselEmail String?
+  opposingCounselAddress String?
+  noticeSentDate       DateTime?
+  petitionFiledDate    DateTime?
+  servedDate           DateTime?
+  hearingDate          DateTime?
+  awardAmount          Decimal?           @db.Decimal(12,2)
+  awardDate            DateTime?
+  /// Snapshot of last/final offer before or during ED (Comp remains ledger source)
+  finalOfferAmount     Decimal?           @db.Decimal(12,2)
+  finalOfferDate       DateTime?
+  appealFiled          Boolean            @default(false)
+  trialDate            DateTime?
+  judgmentDate         DateTime?
+  possessionDate       DateTime?
+  legalCosts           Decimal?           @db.Decimal(8,2)
+  status               CondemnationStatus @default(NOT_STARTED)
+  notes                String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  parcel Parcel @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+
+  @@index([parcelId])
+  @@index([status])
+  @@map("condemnation_tracking")
+}
+
+model DamageClaim {
+  id               String       @id @default(cuid())
+  parcelId         String
+  damageType       DamageType
+  description      String?
+  assessedAmount   Decimal?     @db.Decimal(10,2)
+  negotiatedAmount Decimal?     @db.Decimal(10,2)
+  paidAmount       Decimal?     @db.Decimal(10,2)
+  inspector        String?
+  inspectionDate   DateTime?
+  status           DamageStatus @default(REPORTED)
+  notes            String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  parcel Parcel @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+
+  @@index([parcelId])
+  @@index([status])
+  @@map("damage_claims")
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  projectId     String
+  parcelId      String?
+  payeeName     String
+  paymentType   PaymentType   @default(EASEMENT)
+  amount        Decimal       @db.Decimal(12,2)
+  requestDate   DateTime?
+  approvedDate  DateTime?
+  paidDate      DateTime?
+  checkNumber   String?
+  status        PaymentStatus @default(PENDING)
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parcel  Parcel? @relation(fields: [parcelId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([parcelId])
+  @@index([status])
+  @@map("payments")
+}
+
+model ContactLog {
+  id           String      @id @default(cuid())
+  parcelId     String
+  contactType  ContactType
+  contactDate  DateTime    @default(now())
+  subject      String?
+  summary      String
+  outcome      String?
+  followUpDate DateTime?
+  /// User who logged the contact (audit)
+  createdById  String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  parcel    Parcel @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  createdBy User?  @relation("ContactLogCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([parcelId])
+  @@index([contactDate])
+  @@index([createdById])
+  @@map("contact_logs")
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  userId     String?
+  projectId  String?
+  parcelId   String?
+  action     AuditAction
+  entityType String
+  entityId   String
+  /// Human label e.g. "PTS: NOT_STARTED → GRANTED"
+  summary    String?
+  changes    Json?
+  ipAddress  String?
+  createdAt  DateTime    @default(now())
+
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([projectId, createdAt])
+  @@index([parcelId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+enum ParcelStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  ACQUIRED
+  CONDEMNED
+  RELOCATED
+}
+
+enum TitleStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETE
+  CURATIVE
+  HOLD
+}
+
+enum TitleSearchType {
+  FULL
+  UPDATE
+  CURRENT_OWNER
+  O_AND_E
+}
+
+enum SurveyStatus {
+  NOT_STARTED
+  ORDERED
+  FIELD_WORK
+  DRAFTING
+  REVIEW
+  COMPLETE
+  HOLD
+}
+
+enum SurveyType {
+  BOUNDARY
+  TOPOGRAPHIC
+  ALTA
+  ROW_STAKING
+  AS_BUILT
+}
+
+enum AppraisalStatus {
+  NOT_STARTED
+  ORDERED
+  INSPECTION_SCHEDULED
+  DRAFT_RECEIVED
+  UNDER_REVIEW
+  FINAL
+  HOLD
+}
+
+enum AppraisalType {
+  FEE_SIMPLE
+  EASEMENT
+  DAMAGES_ONLY
+  REVIEW
+}
+
+enum AcquisitionStatus {
+  NOT_STARTED
+  OWNER_CONTACTED
+  OFFER_PREPARED
+  OFFER_PRESENTED
+  NEGOTIATING
+  AGREEMENT_REACHED
+  CLOSING
+  ACQUIRED
+  CONDEMNATION_RECOMMENDED
+  HOLD
+}
+
+enum AcquisitionType {
+  FEE_SIMPLE
+  PERMANENT_EASEMENT
+  TEMPORARY_EASEMENT
+  ACCESS_EASEMENT
+  EASEMENT
+}
+
+enum OfferResponse {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COUNTERED
+  NO_RESPONSE
+}
+
+enum CondemnationStatus {
+  NOT_STARTED
+  NOTICE_SENT
+  PETITION_FILED
+  SERVED
+  HEARING_SCHEDULED
+  AWARD_ISSUED
+  APPEALED
+  TRIAL
+  JUDGMENT
+  POSSESSION_GRANTED
+  COMPLETE
+}
+
+enum DamagesStatus {
+  NOT_STARTED
+  INVESTIGATE
+  REPORT
+  RESOLVED
+}
+
+enum DamageType {
+  CROP
+  TIMBER
+  FENCE
+  IRRIGATION
+  ACCESS
+  CONSTRUCTION
+  TCE_RENTAL
+  BUSINESS_LOSS
+  LANDSCAPING
+  WELL_SEPTIC
+  ENVIRONMENTAL
+  OTHER
+}
+
+enum DamageStatus {
+  REPORTED
+  INVESTIGATING
+  ASSESSED
+  NEGOTIATING
+  APPROVED
+  PAID
+  DENIED
+}
+
+enum PaymentType {
+  EASEMENT
+  FEE_ACQUISITION
+  DAMAGES
+  TCE
+  RELOCATION
+  LEGAL
+  VENDOR
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  ISSUED
+  CLEARED
+  VOID
+  HOLD
+}
+
+enum ContactType {
+  PHONE
+  EMAIL
+  LETTER
+  IN_PERSON
+  TEXT
+  MEETING
+  OTHER
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  STATUS_CHANGE
+  IMPORT
+  EXPORT
+  LOGIN
+}
+
+enum SpecialConditionsStatus {
+  NOT_STARTED
+  NOTIFICATION_REQUIRED
+  LOCKED_GATE
+  HERBICIDES
+  FORESTRY
+  OTHER
+}
+
+enum StatusCategory {
+  GENERAL
+  TITLE
+  SURVEY
+  APPRAISAL
+  ACQUISITION
+  CONDEMNATION
+  SPECIAL_CONDITIONS
+  DAMAGES
+  PTS
+  COMPENSATION
+  LABOR
+  PERMIT
+  PROJECT
+  LEGAL
+  EXISTING_RIGHTS
+  ENCROACHMENT
+}
+
+// ============================================
+// Project enhancement enums & models (flat Project)
+// ============================================
+
+enum PtsStatus {
+  NOT_STARTED
+  REQUESTED
+  GRANTED
+  DENIED
+  ON_HOLD
+  EXPIRED
+  NOT_REQUIRED
+}
+
+enum AssignmentRole {
+  MANAGER
+  LEAD_AGENT
+  AGENT
+  TITLE
+  SURVEY
+  APPRAISAL
+  LEGAL
+  CONSTRUCTION_SUPPORT
+  PERMIT
+  RECORDS_AGENT
+  COORDINATOR
+}
+
+/// Parcel phase status for permitting (not child Permit.status)
+enum PermitPhaseStatus {
+  NOT_STARTED
+  IDENTIFIED
+  IN_PREP
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  DENIED
+  EXPIRED
+  NOT_REQUIRED
+  HOLD
+}
+
+enum ParcelLabelCode {
+  CONSERVATION_EASEMENT
+  ENCROACHMENT_RISK
+  WORK_PERMIT_REQUIRED
+  RAILROAD
+  HIGHWAY_ROW
+  UTILITY_CROSSING
+  ENVIRONMENTAL_SENSITIVE
+  HISTORIC_CULTURAL
+  OTHER
+}
+
+enum LandUseCategory {
+  AGRICULTURE
+  RESIDENTIAL
+  COMMERCIAL
+  INDUSTRIAL
+  FOREST
+  VACANT
+  PUBLIC
+  OTHER
+}
+
+enum MatrixUnit {
+  PER_ACRE
+  PER_SQFT
+  FLAT
+}
+
+enum BudgetCategory {
+  LAND
+  PERMITS
+  ROW_LABOR
+  TITLE_LABOR
+  SURVEY_LABOR
+  APPRAISAL
+  LEGAL
+  CONSTRUCTION_LABOR
+  EXPENSES
+  MILEAGE
+  DAMAGES
+  OTHER
+}
+
+enum BudgetLineMode {
+  TOTAL
+  HOURS_X_RATE
+  PER_PARCEL
+}
+
+enum ScheduleTrack {
+  ROW
+  CONSTRUCTION
+}
+
+enum SchedulePhaseKey {
+  SCOPING_ESTIMATING
+  DUE_DILIGENCE
+  SURVEYING
+  APPRAISAL
+  ACQUISITION
+  CONDEMNATION_FILING
+  CONDEMNATION_RESOLUTION
+  PRELIMINARY_SURVEYS
+  FORESTRY_CLEARING
+  ACCESS_ROADS
+  LINE_CONSTRUCTION
+  ISD
+  CLOSEOUT
+}
+
+enum PermitType {
+  ENVIRONMENTAL
+  HIGHWAY
+  RAILROAD
+  UTILITY
+  LOCAL
+  FEDERAL
+  OTHER
+}
+
+enum PermitStatus {
+  NOT_STARTED
+  PREPARING
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  DENIED
+  EXPIRED
+  CLOSED
+}
+
+enum CompensationDecision {
+  DRAFT
+  OFFERED
+  PENDING_REVIEW
+  ACCEPTED
+  REJECTED
+  SUPERSEDED
+  WITHDRAWN
+}
+
+model LandPaymentMatrix {
+  id        String   @id @default(cuid())
+  projectId String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  rows    LandPaymentMatrixRow[]
+
+  @@map("land_payment_matrices")
+}
+
+model LandPaymentMatrixRow {
+  id          String          @id @default(cuid())
+  matrixId    String
+  landUse     LandUseCategory
+  customLabel String?
+  unit        MatrixUnit      @default(PER_ACRE)
+  minAmount   Decimal         @db.Decimal(12, 2)
+  maxAmount   Decimal         @db.Decimal(12, 2)
+  notes       String?
+  sortOrder   Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  matrix LandPaymentMatrix @relation(fields: [matrixId], references: [id], onDelete: Cascade)
+
+  @@index([matrixId])
+  @@map("land_payment_matrix_rows")
+}
+
+model RoleAssignment {
+  id            String         @id @default(cuid())
+  projectId     String
+  userId        String
+  role          AssignmentRole
+  effectiveFrom DateTime       @default(now())
+  effectiveTo   DateTime?
+  isCurrent     Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, role, isCurrent])
+  @@index([userId])
+  @@map("role_assignments")
+}
+
+model RoleRate {
+  id            String         @id @default(cuid())
+  projectId     String
+  role          AssignmentRole
+  hourlyRate    Decimal        @db.Decimal(10, 2)
+  effectiveFrom DateTime       @default(now())
+  effectiveTo   DateTime?
+  isCurrent     Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, role, isCurrent])
+  @@map("role_rates")
+}
+
+model BudgetLine {
+  id        String         @id @default(cuid())
+  projectId String
+  category  BudgetCategory
+  label     String?
+  mode      BudgetLineMode @default(TOTAL)
+  amount    Decimal?       @db.Decimal(12, 2)
+  hours     Decimal?       @db.Decimal(10, 2)
+  rate      Decimal?       @db.Decimal(10, 2)
+  total     Decimal        @db.Decimal(12, 2)
+  sortOrder Int            @default(0)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("budget_lines")
+}
+
+model ProjectSchedulePhase {
+  id         String           @id @default(cuid())
+  projectId  String
+  track      ScheduleTrack
+  phaseKey   SchedulePhaseKey
+  label      String?
+  startDate  DateTime?
+  endDate    DateTime?
+  /// When true, phase is done — not LATE even if endDate is past
+  isComplete Boolean          @default(false)
+  sortOrder  Int              @default(0)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, phaseKey])
+  @@index([projectId, track])
+  @@map("project_schedule_phases")
+}
+
+model Permit {
+  id              String       @id @default(cuid())
+  projectId       String
+  /// Optional tract link. null = project-wide / corridor permit.
+  parcelId        String?
+  name            String
+  permitType      PermitType   @default(OTHER)
+  status          PermitStatus @default(NOT_STARTED)
+  agency          String?
+  referenceNumber String?
+  submittedDate   DateTime?
+  approvedDate    DateTime?
+  expirationDate  DateTime?
+  permitteeName   String?
+  permitteeOrg    String?
+  contactName     String?
+  contactPhone    String?
+  contactEmail    String?
+  contactAddress  String?
+  notes           String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parcel    Parcel?    @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  notesList Note[]
+  documents Document[]
+
+  @@index([projectId])
+  @@index([parcelId])
+  @@index([status])
+  @@map("permits")
+}
+
+model CompensationOffer {
+  id                 String               @id @default(cuid())
+  parcelId           String
+  landUse            LandUseCategory
+  landUseLabel       String?
+  matrixRowId        String?
+  easementAcres      Decimal              @db.Decimal(10, 3)
+  matrixMinUnit      Decimal              @db.Decimal(12, 2)
+  matrixMaxUnit      Decimal              @db.Decimal(12, 2)
+  unit               MatrixUnit           @default(PER_ACRE)
+  rangeLow           Decimal              @db.Decimal(12, 2)
+  rangeHigh          Decimal              @db.Decimal(12, 2)
+  negotiatedAmount   Decimal              @db.Decimal(12, 2)
+  damages            Decimal              @default(0) @db.Decimal(12, 2)
+  otherAmount        Decimal              @default(0) @db.Decimal(12, 2)
+  total              Decimal              @db.Decimal(12, 2)
+  outsideRange       Boolean              @default(false)
+  outsideRangeReason String?
+  decision           CompensationDecision @default(DRAFT)
+  counterEmailSentAt DateTime?
+  counterEmailTo     String?
+  createdById        String?
+  notes              String?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  parcel    Parcel @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  createdBy User?  @relation("CompensationCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([parcelId])
+  @@index([decision])
+  @@map("compensation_offers")
+}
+
+
+/// Unified parcel cost ledger (time, professional fees, expenses, mileage)
+enum CostDiscipline {
+  ROW
+  TITLE
+  SURVEY
+  APPRAISAL
+  LEGAL
+  CONSTRUCTION
+  PERMITTING
+  GENERAL
+}
+
+enum CostEntryType {
+  TIME
+  FEE
+  EXPENSE
+  MILEAGE
+}
+
+enum CostFeeCode {
+  APPRAISAL
+  EDIT
+  UPDATE
+  EXHIBIT
+  FILING
+  OTHER
+}
+
+enum CostExpenseCategory {
+  MILEAGE
+  LODGING
+  MEALS
+  FILING
+  COURIER
+  SUPPLIES
+  OTHER
+}
+
+model ParcelCostEntry {
+  id              String              @id @default(cuid())
+  parcelId        String
+  userId          String
+  discipline      CostDiscipline
+  entryType       CostEntryType
+  workDate        DateTime            @db.Date
+  /// TIME
+  hours           Decimal?            @db.Decimal(8, 2)
+  role            AssignmentRole?
+  hourlyRate      Decimal?            @db.Decimal(10, 2)
+  /// FEE
+  feeCode         CostFeeCode?
+  /// EXPENSE
+  expenseCategory CostExpenseCategory?
+  vendor          String?
+  /// MILEAGE
+  miles           Decimal?            @db.Decimal(10, 2)
+  mileageRate     Decimal?            @db.Decimal(6, 4)
+  /// Always stored total $
+  amount          Decimal             @db.Decimal(12, 2)
+  description     String?
+  billable        Boolean             @default(true)
+  /// Finance receipt (not work-product Document)
+  receiptUrl      String?
+  receiptName     String?
+  receiptMimeType String?
+  receiptSize     Int?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  parcel Parcel @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([parcelId])
+  @@index([parcelId, discipline])
+  @@index([userId])
+  @@index([workDate])
+  @@index([entryType])
+  @@map("parcel_cost_entries")
+}
+
+/// Team access beyond owner (invite accepted)
+model ProjectMember {
+  id        String         @id @default(cuid())
+  projectId String
+  userId    String
+  role      AssignmentRole @default(AGENT)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@map("project_members")
+}
+
+/// Pending team invites (email may not have an account yet)
+model ProjectInvite {
+  id          String         @id @default(cuid())
+  projectId   String
+  email       String
+  role        AssignmentRole @default(AGENT)
+  token       String         @unique
+  status      String         @default("PENDING") // PENDING | ACCEPTED | REVOKED | EXPIRED
+  invitedById String
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  invitedBy User    @relation("InvitesSent", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@index([projectId, status])
+  @@index([email, status])
+  @@map("project_invites")
+}
+
+// ============================================
+// Existing rights (project instruments × parcels)
+// ============================================
+
+/// Parcel research / strategy status for existing rights on this tract
+enum ExistingRightsStatus {
+  NOT_REVIEWED
+  NONE
+  RESTRICTED
+  SUPPLEMENT_NEEDED
+  SUPPLEMENT_ACQUIRED
+}
+
+/// Why this parcel is on the project corridor
+enum ParcelClass {
+  UNKNOWN
+  GREENFIELD
+  BROWNFIELD
+  THIRD_PARTY
+}
+
+enum ExistingRightType {
+  EASEMENT
+  ROW
+  LICENSE
+  COVENANT
+  LEASE
+  OTHER
+}
+
+enum ExistingRightPurpose {
+  INGRESS_EGRESS
+  UTILITY
+  PIPELINE
+  RAIL
+  ACCESS
+  DRAINAGE
+  ELECTRIC
+  TELECOM
+  OTHER
+}
+
+enum ExistingRightLife {
+  ACTIVE
+  RELEASED
+  EXPIRED
+  UNKNOWN
+}
+
+enum ExistingRightImpact {
+  FULL
+  PARTIAL
+  UNKNOWN
+}
+
+/// Project-scoped instrument (one easement # shared across split parcels)
+model ExistingRight {
+  id                     String               @id @default(cuid())
+  projectId              String
+  /// Display easement / instrument number
+  instrumentNumber       String?
+  /// Normalized key for same-# matching within project
+  instrumentNumberNorm   String?
+  name                   String?
+  rightType              ExistingRightType    @default(EASEMENT)
+  purpose                ExistingRightPurpose @default(OTHER)
+  grantor                String?
+  grantee                String?
+  county                 String?
+  recordingBook          String?
+  recordingPage          String?
+  recordingInstrument    String?
+  recordingDate          DateTime?
+  widthFeet              Decimal?             @db.Decimal(10, 2)
+  widthNotes             String?
+  termNotes              String?
+  lifeStatus             ExistingRightLife    @default(ACTIVE)
+  /// String[] flag codes: INGRESS_EGRESS, HERBICIDE, POLE, MATERIAL, …
+  restrictionFlags       Json?
+  restrictionsNote       String?
+  affectsProject         Boolean?
+  /// Optional corridor geometry (GeoJSON)
+  geometry               Json?
+  geometrySource         String?
+  notes                  String?
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+
+  project Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parcels ExistingRightParcel[]
+
+  @@index([projectId])
+  @@index([projectId, instrumentNumberNorm])
+  @@index([lifeStatus])
+  @@map("existing_rights")
+}
+
+model ExistingRightParcel {
+  id              String              @id @default(cuid())
+  existingRightId String
+  parcelId        String
+  impact          ExistingRightImpact @default(UNKNOWN)
+  note            String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  existingRight ExistingRight @relation(fields: [existingRightId], references: [id], onDelete: Cascade)
+  parcel        Parcel        @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+
+  @@unique([existingRightId, parcelId])
+  @@index([parcelId])
+  @@index([existingRightId])
+  @@map("existing_right_parcels")
+}
+
+// ============================================
+// Encroachments (parcel items + rollup status)
+// ============================================
+
+/// Parcel-level encroachment research / disposition rollup
+enum EncroachmentStatus {
+  NOT_REVIEWED
+  NONE
+  IDENTIFIED
+  NEEDS_REMOVAL
+  CAN_REMAIN
+  REMOVED
+}
+
+enum EncroachmentType {
+  BUILDING
+  SHED
+  FENCE
+  DRIVEWAY
+  PARKING
+  SEPTIC
+  WELL
+  CROP_ORCHARD
+  LANDSCAPING
+  UTILITIES
+  STOCKPILE
+  OTHER
+}
+
+enum EncroachmentDisposition {
+  IDENTIFIED
+  NEEDS_REMOVAL
+  CAN_REMAIN
+  REMOVED
+}
+
+enum EncroachmentResponsibility {
+  OWNER
+  COMPANY
+  SHARED
+  UNKNOWN
+}
+
+enum YesNoUnknown {
+  YES
+  NO
+  UNKNOWN
+}
+
+model ParcelEncroachment {
+  id                 String                     @id @default(cuid())
+  parcelId           String
+  encroachmentType   EncroachmentType           @default(OTHER)
+  description        String?
+  locationNote       String?
+  disposition        EncroachmentDisposition    @default(IDENTIFIED)
+  inPermanentEasement YesNoUnknown              @default(UNKNOWN)
+  inTce              YesNoUnknown               @default(UNKNOWN)
+  ownerResponsibility EncroachmentResponsibility @default(UNKNOWN)
+  agreementRef       String?
+  estimatedCost      Decimal?                   @db.Decimal(12, 2)
+  actualCost         Decimal?                   @db.Decimal(12, 2)
+  costNotes          String?
+  identifiedDate     DateTime?
+  resolvedDate       DateTime?
+  notes              String?
+  sortOrder          Int                        @default(0)
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
+
+  parcel Parcel @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+
+  @@index([parcelId])
+  @@index([disposition])
+  @@index([encroachmentType])
+  @@map("parcel_encroachments")
+}

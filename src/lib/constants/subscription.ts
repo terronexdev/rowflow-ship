@@ -21,6 +21,7 @@ export function isTerronexCompedEmail(email: string | null | undefined): boolean
   if (!email) return false;
   const e = email.trim().toLowerCase();
   if (e.endsWith('@terronex.dev')) return true;
+  // Owner / tester accounts
   if (e === 'terronex.dev@gmail.com') return true;
   if (e === 'jsokiraps@gmail.com') return true;
   if (e === 'jmsokira@gmail.com') return true;
@@ -45,6 +46,7 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTiers, SubscriptionLimits> =
       '100 MB storage',
     ],
   },
+  // BASIC kept for Stripe/webhook backward-compat; not sold
   BASIC: {
     tier: 'BASIC',
     name: 'Basic (legacy)',
@@ -118,6 +120,7 @@ export function formatLimit(limit: number): string {
   return limit === -1 ? 'Unlimited' : limit.toString();
 }
 
+/** Limits object for granting Pro (comped or paid) */
 export function proLimitFields() {
   const t = SUBSCRIPTION_TIERS.PRO;
   return {
@@ -130,6 +133,7 @@ export function proLimitFields() {
   };
 }
 
+/** Defaults when creating a FREE subscription row */
 export function freeLimitFields() {
   const t = SUBSCRIPTION_TIERS.FREE;
   return {

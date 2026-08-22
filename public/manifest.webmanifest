@@ -1,11 +1,13 @@
 {
   "name": "ROWFlow",
   "short_name": "ROWFlow",
-  "description": "Map-first right-of-way tracking by Terronex",
-  "start_url": "/",
+  "description": "Map-first right-of-way tracking and parcel acquisition management.",
+  "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0b1220",
-  "theme_color": "#3b82f6",
+  "background_color": "#0f172a",
+  "theme_color": "#16a34a",
+  "orientation": "any",
   "icons": [
     {
       "src": "/icons/icon-192.png",

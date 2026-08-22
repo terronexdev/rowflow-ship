@@ -1,0 +1,425 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --tx-bg: #050505;
+  --tx-panel: #0a0f1d;
+  --tx-panel-alt: #070b14;
+  --tx-border: rgba(255, 255, 255, 0.08);
+  --tx-text: #e4e4e7;
+  --tx-muted: #a1a1aa;
+  --tx-accent: #3b82f6;
+  --tx-ok: #10b981;
+  /* Map chrome — light controls on dark basemap for readability */
+  --map-ctrl-bg: #f4f6fa;
+  --map-ctrl-bg-hover: #ffffff;
+  --map-ctrl-border: rgba(15, 23, 42, 0.18);
+  --map-ctrl-icon: #0f172a;
+  --map-ctrl-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: var(--tx-bg);
+  color: var(--tx-text);
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Leaflet base */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  background: #0b1220;
+  font: inherit;
+}
+
+/* ---- Left / bar tools: LIGHT buttons, DARK icons (readable on dark map) ---- */
+.leaflet-bar {
+  border: 1px solid var(--map-ctrl-border) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+  box-shadow: var(--map-ctrl-shadow) !important;
+}
+
+.leaflet-bar a,
+.leaflet-bar a:hover,
+.leaflet-touch .leaflet-bar a {
+  background-color: var(--map-ctrl-bg) !important;
+  color: var(--map-ctrl-icon) !important;
+  border-bottom: 1px solid var(--map-ctrl-border) !important;
+  width: 34px !important;
+  height: 34px !important;
+  line-height: 34px !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  text-shadow: none !important;
+}
+
+.leaflet-bar a:last-child {
+  border-bottom: none !important;
+}
+
+.leaflet-bar a:hover {
+  background-color: var(--map-ctrl-bg-hover) !important;
+}
+
+.leaflet-bar a.leaflet-disabled {
+  opacity: 0.45 !important;
+}
+
+/* Leaflet.draw toolbar icons are dark PNGs — keep light button chrome */
+.leaflet-draw-toolbar a,
+.leaflet-draw-toolbar a:hover {
+  background-color: var(--map-ctrl-bg) !important;
+  background-image: url('https://unpkg.com/leaflet-draw@1.0.4/dist/images/spritesheet.png') !important;
+  background-repeat: no-repeat !important;
+  border-bottom-color: var(--map-ctrl-border) !important;
+}
+
+.leaflet-retina .leaflet-draw-toolbar a {
+  background-image: url('https://unpkg.com/leaflet-draw@1.0.4/dist/images/spritesheet-2x.png') !important;
+  background-size: 270px 30px !important;
+}
+
+/* Fullscreen / measure / geocoder */
+.leaflet-control-zoom-fullscreen,
+.leaflet-control-geocoder,
+.leaflet-control-geocoder-form input,
+.leaflet-control-measure,
+.leaflet-control-measure a {
+  background: var(--map-ctrl-bg) !important;
+  color: var(--map-ctrl-icon) !important;
+  border-color: var(--map-ctrl-border) !important;
+}
+
+.leaflet-control-geocoder-form input {
+  color: var(--map-ctrl-icon) !important;
+}
+
+.leaflet-control-geocoder-icon {
+  background-color: transparent !important;
+}
+
+/* Layers control (top-right) — dark panel matching suite */
+.leaflet-control-layers {
+  background: var(--tx-panel) !important;
+  color: var(--tx-text) !important;
+  border: 1px solid var(--tx-border) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--map-ctrl-shadow) !important;
+}
+
+.leaflet-control-layers-toggle {
+  background-color: var(--map-ctrl-bg) !important;
+  border-radius: 8px !important;
+  width: 36px !important;
+  height: 36px !important;
+  box-shadow: var(--map-ctrl-shadow);
+}
+
+.leaflet-control-layers-expanded {
+  color: var(--tx-text) !important;
+  padding: 10px 12px !important;
+  min-width: 180px;
+}
+
+.leaflet-control-layers label {
+  color: var(--tx-text) !important;
+  font-size: 12px;
+}
+
+.leaflet-control-layers-separator {
+  border-top-color: var(--tx-border) !important;
+}
+
+/* Overlay opacity — inside Layers control, not a free-floating panel */
+.leaflet-control-layers-opacity {
+  border-top: 1px solid var(--tx-border);
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+.leaflet-control-layers-opacity .layers-opacity-title {
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--tx-text);
+  margin-bottom: 6px;
+}
+
+.leaflet-control-layers-opacity .opacity-row {
+  margin-bottom: 8px;
+}
+
+.leaflet-control-layers-opacity .opacity-row:last-child {
+  margin-bottom: 0;
+}
+
+.leaflet-control-layers-opacity label {
+  color: var(--tx-muted) !important;
+  font-size: 11px !important;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.leaflet-control-layers-opacity .opacity-value {
+  float: right;
+  color: var(--tx-muted);
+  font-size: 10px;
+}
+
+.leaflet-control-layers-opacity input[type='range'] {
+  width: 100%;
+  accent-color: var(--tx-accent);
+  cursor: pointer;
+}
+
+/* Collapse draw/measure/search tools until Tools toggle is on.
+   Keep zoom, fullscreen, and the tools toggle itself. */
+.rowflow-map-root:not(.rowflow-tools-open) .leaflet-top.leaflet-left .rowflow-tool-chrome,
+.rowflow-map-root:not(.rowflow-tools-open) .leaflet-top.leaflet-left .leaflet-draw,
+.rowflow-map-root:not(.rowflow-tools-open) .leaflet-top.leaflet-left .leaflet-control-measure,
+.rowflow-map-root:not(.rowflow-tools-open) .leaflet-top.leaflet-left .leaflet-control-geocoder {
+  display: none !important;
+}
+
+.rowflow-tools-toggle a {
+  color: var(--tx-text) !important;
+}
+
+/* Single map legend */
+.rowflow-map-legend {
+  background: var(--tx-panel) !important;
+  color: var(--tx-text) !important;
+  border: 1px solid var(--tx-border) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--map-ctrl-shadow) !important;
+  overflow: hidden;
+  min-width: 140px;
+}
+
+.rowflow-map-legend .legend-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: transparent;
+  border: 0;
+  color: var(--tx-text);
+  font-size: 12px;
+  font-weight: 650;
+  padding: 8px 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.rowflow-map-legend .legend-chevron {
+  color: var(--tx-muted);
+  font-size: 11px;
+}
+
+.rowflow-map-legend .legend-body {
+  padding: 0 10px 8px;
+}
+
+.rowflow-map-legend .legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.rowflow-map-legend .legend-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.rowflow-map-legend .legend-label {
+  font-size: 11px;
+  color: var(--tx-muted);
+  line-height: 1.2;
+}
+
+.rowflow-map-legend .legend-toggle-row {
+  cursor: pointer;
+  user-select: none;
+}
+
+.rowflow-map-legend .legend-toggle-row input {
+  margin: 0;
+  accent-color: var(--tx-accent);
+  cursor: pointer;
+}
+
+.rowflow-map-legend .legend-actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.rowflow-map-legend .legend-actions button {
+  background: transparent;
+  border: 1px solid var(--tx-border);
+  color: var(--tx-muted);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.rowflow-map-legend .legend-actions button:hover {
+  color: var(--tx-text);
+  border-color: var(--tx-accent);
+}
+
+/* Map-embedded parcel search — true top-center, clear of tools/layers */
+.rowflow-map-search {
+  position: absolute !important;
+  top: 12px !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translateX(-50%);
+  z-index: 1100;
+  margin: 0 !important;
+  pointer-events: none;
+}
+
+.rowflow-map-search-inner {
+  position: relative;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+}
+
+.rowflow-map-search input {
+  width: min(360px, 56vw);
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--tx-border);
+  background: color-mix(in srgb, var(--tx-panel) 94%, transparent);
+  backdrop-filter: blur(8px);
+  color: var(--tx-text);
+  padding: 0 36px 0 16px;
+  font-size: 13px;
+  box-shadow: var(--map-ctrl-shadow);
+  outline: none;
+}
+
+.rowflow-map-search input::placeholder {
+  color: var(--tx-muted);
+}
+
+.rowflow-map-search input:focus {
+  border-color: var(--tx-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--tx-accent) 35%, transparent),
+    var(--map-ctrl-shadow);
+}
+
+.rowflow-map-search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--tx-muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rowflow-map-search-clear:hover {
+  color: var(--tx-text);
+  background: color-mix(in srgb, var(--tx-text) 10%, transparent);
+}
+
+.rowflow-map-search-clear[hidden] {
+  display: none !important;
+}
+
+/* Legacy free-floating opacity panel removed from map — keep rules inert */
+.leaflet-control-opacity {
+  display: none !important;
+}
+
+/* Coords chip */
+.leaflet-control-coordinates {
+  background: var(--tx-panel) !important;
+  color: var(--tx-text) !important;
+  border: 1px solid var(--tx-border) !important;
+  border-radius: 6px !important;
+  padding: 5px 10px !important;
+  font-size: 12px !important;
+  box-shadow: var(--map-ctrl-shadow);
+}
+
+/* Popups / legend */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--tx-panel);
+  color: var(--tx-text);
+  border: 1px solid var(--tx-border);
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  color: var(--tx-muted);
+}
+
+.leaflet-draw-actions a {
+  background: var(--map-ctrl-bg) !important;
+  color: var(--map-ctrl-icon) !important;
+  border-color: var(--map-ctrl-border) !important;
+}
+
+/* Suite utility */
+.tx-card {
+  border: 1px solid var(--tx-border);
+  border-radius: 10px;
+  background: var(--tx-panel-alt);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Constraint labels: amber dashed outline */
+.leaflet-overlay-pane path.rf-parcel-constraint {
+  stroke: #f59e0b !important;
+  stroke-opacity: 1 !important;
+}
+
+/* Diagonal hatch fill (SVG pattern defined in map code) */
+.leaflet-overlay-pane path.rf-parcel-hatch {
+  fill: url(#rf-hatch-amber) !important;
+  stroke: none !important;
+  pointer-events: none !important;
+}
+

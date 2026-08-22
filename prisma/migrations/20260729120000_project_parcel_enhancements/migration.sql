@@ -1,0 +1,2 @@
+-- Additive project/parcel enhancements (applied via db push; SQL kept for history)
+-- See docs/PROJECT_PARCEL_ENHANCEMENT_SPEC.md
