@@ -63,11 +63,11 @@ export default function PrivacyPage() {
       <h2>4. Third-party open GIS &amp; parcel data</h2>
       <p>
         Tractsource retrieves parcel geometry and attributes from third-party open GIS sources or
-        from files you upload. That data may include owner names and addresses published by counties
-        or state feeds. It is provided <strong>as of retrieval time</strong> for cartographic /
-        project planning use. It is <strong>not</strong> a legal survey, title commitment, or
-        official notice of ownership. Source license terms may limit redistribution; you are
-        responsible for compliant use of exports.
+        from files you upload. ROWFlow may display that data plus your map notes and overlays. That
+        data may include owner names and addresses published by counties or state feeds. It is
+        provided <strong>as of retrieval time</strong> for cartographic / project planning use. It is{' '}
+        <strong>not</strong> a legal survey, title commitment, or official notice of ownership. Source
+        license terms may limit redistribution; you are responsible for compliant use of exports.
       </p>
 
       <h2>5. Processors &amp; subprocessors</h2>
@@ -83,15 +83,17 @@ export default function PrivacyPage() {
           <strong>Google</strong> — OAuth sign-in (when you choose it)
         </li>
         <li>
-          <strong>Database &amp; object storage</strong> — e.g. PostgreSQL and blob storage for
-          files/job artifacts
+          <strong>Neon</strong> — PostgreSQL database
+        </li>
+        <li>
+          <strong>Vercel Blob</strong> — uploaded files and job artifacts
         </li>
         <li>
           <strong>Resend</strong> (ROWFlow) — transactional email when configured
         </li>
         <li>
-          <strong>Map / GIS basemap &amp; boundary providers</strong> — e.g. OpenStreetMap/CARTO
-          tiles, Esri public layers for map display
+          <strong>Map / GIS basemap providers</strong> — Esri public tiles and OpenStreetMap (and
+          similar) for map display. We do not sell map data to advertisers.
         </li>
       </ul>
 
