@@ -21,12 +21,57 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import PaymentsIcon from '@mui/icons-material/Payments';
 import HubIcon from '@mui/icons-material/Hub';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
-import dynamic from 'next/dynamic';
-import { terronex } from '@/lib/theme';
-
-
+import { FONT_SERIF, terronex } from '@/lib/theme';
+import ThemeToggle from '@/components/layout/ThemeToggle';
 
 type FeatureKey = 'map' | 'lifecycle' | 'matrix' | 'team' | 'analytics' | 'suite';
+
+const SHOTS: Partial<Record<FeatureKey, { src: string; alt: string }>> = {
+  map: {
+    src: '/marketing/map.jpg',
+    alt: 'ROWFlow map: color-by Overall, Class, Rights, Encroach plus corridor layers',
+  },
+  lifecycle: {
+    src: '/marketing/parcel.jpg',
+    alt: 'Parcel workspace: titled owner, contact log, Create Take',
+  },
+  analytics: {
+    src: '/marketing/overview.jpg',
+    alt: 'Project Overview: stale contacts, past-due follow-up, estimate vs actual',
+  },
+  suite: {
+    src: '/marketing/suite.jpg',
+    alt: 'Suite handoff: Tractsource package → ROWScope seed → ROWFlow import',
+  },
+};
+
+const GALLERY: Array<{ src: string; label: string; blurb: string }> = [
+  {
+    src: '/marketing/map.jpg',
+    label: 'Map workspace',
+    blurb: 'Live goode corridor. Color-by Overall, tract selected, access dashes, parcel inspector.',
+  },
+  {
+    src: '/marketing/overview.jpg',
+    label: 'Overview',
+    blurb: '100 tracts, Scope estimate vs actual, stale-contact chip. Desk BOE ≠ offer.',
+  },
+  {
+    src: '/marketing/list.jpg',
+    label: 'Line list',
+    blurb: 'Easement / PIN / owner / status matrix. Double-click status. CSV of the visible filter.',
+  },
+  {
+    src: '/marketing/parcel.jpg',
+    label: 'Parcel edit',
+    blurb: 'Summary | Full. Status, identity, titled owner, contacts, existing rights, take.',
+  },
+  {
+    src: '/marketing/suite.jpg',
+    label: 'Import',
+    blurb: 'Corridor package for the map. ROWScope seed for budget. No auto offers.',
+  },
+];
 
 const FEATURES: Array<{
   key: FeatureKey;
@@ -38,37 +83,37 @@ const FEATURES: Array<{
     key: 'map',
     icon: <MapIcon fontSize="small" />,
     title: 'Map-first parcel workspace',
-    body: 'Leaflet map with PTS, title, survey, acquisition and more — color-coded status at a glance.',
+    body: 'Color-by Overall, parcel class, existing rights, or encroachments. Corridor package layers sit on the same map.',
   },
   {
     key: 'lifecycle',
     icon: <TimelineIcon fontSize="small" />,
-    title: 'Full ROW lifecycle',
-    body: 'Track Permission to Survey through acquisition, condemnation, damages, and closeout without spreadsheet chaos.',
+    title: 'Contact → negotiate → status',
+    body: 'Contact log with stale and past-due follow-up. Create Take on the matrix. Who + when on notes, docs, and contacts.',
   },
   {
     key: 'matrix',
     icon: <PaymentsIcon fontSize="small" />,
-    title: 'Matrix-driven compensation',
-    body: 'Land payment matrix, offer ranges, outside-range alerts, and counter-offer email via your domain.',
+    title: 'Matrix + Scope budget',
+    body: 'Land matrix and offer bands in Flow. Budget lines seed from ROWScope, including per-parcel × an editable tract count.',
   },
   {
     key: 'team',
     icon: <GroupsIcon fontSize="small" />,
     title: 'Team roles & labor',
-    body: 'Manager / Lead / Agent assignments, invite links, billable labor by role, and budget variance.',
+    body: 'Multi-role roster, invites, billable labor by discipline, and budget vs actuals.',
   },
   {
     key: 'analytics',
     icon: <AnalyticsIcon fontSize="small" />,
-    title: 'Operational analytics',
-    body: 'Command-center dashboard and multi-dimension analytics across projects — acquisition, PTS, schedule health.',
+    title: 'Overview + Activity',
+    body: 'Command-center chips and bars on the project. One Activity feed: filters, group-by-day, CSV.',
   },
   {
     key: 'suite',
     icon: <HubIcon fontSize="small" />,
-    title: 'Terronex suite',
-    body: 'Built to work with Tractsource parcel extracts — import GeoJSON and keep GIS + ROW in one workflow.',
+    title: 'Tractsource → ROWScope → ROWFlow',
+    body: 'Package for the map. Seed for budget + PE + land use. No auto offers.',
   },
 ];
 
@@ -104,7 +149,7 @@ function MockChrome({
         border: `1px solid ${terronex.border}`,
         overflow: 'hidden',
         bgcolor: terronex.panelAlt,
-        boxShadow: '0 24px 80px rgba(0,0,0,0.55)',
+        boxShadow: terronex.shadow,
         minHeight: 360,
       }}
     >
@@ -116,7 +161,7 @@ function MockChrome({
           alignItems: 'center',
           gap: 1,
           borderBottom: `1px solid ${terronex.border}`,
-          bgcolor: '#0a0f1a',
+          bgcolor: terronex.panel,
         }}
       >
         <Stack direction="row" spacing={0.6}>
@@ -523,7 +568,7 @@ function SuiteMock() {
             sx={{
               height: 90,
               borderRadius: 1,
-              bgcolor: '#0d1526',
+              bgcolor: terronex.panelAlt,
               border: `1px dashed ${terronex.border}`,
               display: 'grid',
               placeItems: 'center',
@@ -554,7 +599,7 @@ function SuiteMock() {
             sx={{
               height: 90,
               borderRadius: 1,
-              bgcolor: '#0d1526',
+              bgcolor: terronex.panelAlt,
               border: `1px dashed ${terronex.border}`,
               p: 1,
               fontSize: 11,
@@ -574,19 +619,30 @@ function SuiteMock() {
 }
 
 function FeaturePreview({ featureKey }: { featureKey: FeatureKey }) {
-  const [mapTab, setMapTab] = useState(0);
-
-  if (featureKey === 'map') {
+  const shot = SHOTS[featureKey];
+  if (shot) {
+    const titles: Record<FeatureKey, string> = {
+      map: 'map · color-by + package layers',
+      lifecycle: 'parcel · contacts + Create Take',
+      matrix: 'project · matrix',
+      team: 'project · people',
+      analytics: 'project · overview',
+      suite: 'suite · Tractsource → ROWScope → ROWFlow',
+    };
     return (
-      <MockChrome title="map · workspace" tabs={['Status colors', 'PTS colors']} tab={mapTab} onTab={setMapTab}>
-        <MapMock layer={mapTab} />
-      </MockChrome>
-    );
-  }
-  if (featureKey === 'lifecycle') {
-    return (
-      <MockChrome title="parcels / 12-051 / edit">
-        <ParcelEditMock />
+      <MockChrome title={titles[featureKey]}>
+        <Box
+          component="img"
+          src={shot.src}
+          alt={shot.alt}
+          sx={{
+            display: 'block',
+            width: '100%',
+            height: 'auto',
+            borderRadius: 1,
+            border: `1px solid ${terronex.border}`,
+          }}
+        />
       </MockChrome>
     );
   }
@@ -597,28 +653,9 @@ function FeaturePreview({ featureKey }: { featureKey: FeatureKey }) {
       </MockChrome>
     );
   }
-  if (featureKey === 'team') {
-    return (
-      <MockChrome title="projects / Outblitz / edit · roles & labor">
-        <TeamMock />
-      </MockChrome>
-    );
-  }
-  if (featureKey === 'analytics') {
-    return (
-      <MockChrome title="dashboard · analytics">
-        <Box sx={{ mb: 2 }}>
-          <DashboardMock />
-        </Box>
-        <Box sx={{ borderTop: `1px solid ${terronex.border}`, pt: 1.5 }}>
-          <AnalyticsMock />
-        </Box>
-      </MockChrome>
-    );
-  }
   return (
-    <MockChrome title="suite handoff · Tractsource → ROWFlow">
-      <SuiteMock />
+    <MockChrome title="projects / edit · roles & labor">
+      <TeamMock />
     </MockChrome>
   );
 }
@@ -663,6 +700,7 @@ export default function HomePage() {
             <Button component={Link} href="/privacy" size="small" color="inherit">
               Privacy
             </Button>
+            <ThemeToggle />
             <Button component={Link} href="/login" size="small" variant="outlined" color="inherit">
               Sign in
             </Button>
@@ -681,14 +719,15 @@ export default function HomePage() {
           sx={{
             mb: 2,
             color: terronex.ok,
-            borderColor: 'rgba(16,185,129,0.35)',
-            bgcolor: 'rgba(16,185,129,0.08)',
+            borderColor: 'color-mix(in srgb, var(--tx-ok) 35%, transparent)',
+            bgcolor: 'color-mix(in srgb, var(--tx-ok) 10%, transparent)',
           }}
           variant="outlined"
         />
         <Typography
           variant="h2"
           sx={{
+            fontFamily: FONT_SERIF,
             fontWeight: 700,
             letterSpacing: '-0.03em',
             fontSize: { xs: 32, md: 46 },
@@ -700,9 +739,8 @@ export default function HomePage() {
           Right-of-way tracking built for the field — and the map.
         </Typography>
         <Typography sx={{ color: terronex.muted, fontSize: 18, mb: 3, maxWidth: '40em' }}>
-          ROWFlow is the acquisition command center for transmission and utility projects. Click a
-          capability below to explore the workspace — map, parcel edit, matrix, team, dashboard &
-          analytics.
+          ROWFlow is the live tracker after the desk estimate. Import a corridor package, seed the
+          budget from ROWScope, then contact, negotiate, and move status on the map.
         </Typography>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mb: 1.5 }}>
           <Button component={Link} href="/register" variant="contained" size="large">
@@ -736,14 +774,14 @@ export default function HomePage() {
                       textAlign: 'left',
                       cursor: 'pointer',
                       p: 1.5,
-                      bgcolor: selected ? 'rgba(59,130,246,0.12)' : terronex.panel,
+                      bgcolor: selected ? terronex.accentSoft : terronex.panel,
                       borderColor: selected ? 'primary.main' : terronex.border,
                       color: 'inherit',
                       font: 'inherit',
                       transition: 'border-color 0.15s, background 0.15s',
                       '&:hover': {
                         borderColor: 'primary.light',
-                        bgcolor: 'rgba(59,130,246,0.08)',
+                        bgcolor: terronex.accentSoft,
                       },
                     }}
                   >
@@ -773,9 +811,41 @@ export default function HomePage() {
               <FeaturePreview featureKey={active} />
             </Box>
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-              Import corridor extracts from Tractsource, then track PTS through acquisition on the map. Sign in to run live projects.
+              Live captures from project goode. Click a capability. Sign in for your projects.
             </Typography>
           </Grid>
+        </Grid>
+
+        <Typography variant="h5" fontWeight={700} sx={{ mt: 7, mb: 1, fontFamily: FONT_SERIF }}>
+          What it looks like
+        </Typography>
+        <Typography sx={{ color: terronex.muted, mb: 2, maxWidth: '40em' }}>
+          Live captures from project goode (100 Bedford tracts). Your project is the source of truth.
+        </Typography>
+        <Grid container spacing={2}>
+          {GALLERY.map((g) => (
+            <Grid item xs={12} sm={6} md={4} key={g.src}>
+              <Paper
+                variant="outlined"
+                sx={{ overflow: 'hidden', bgcolor: terronex.panel, borderColor: terronex.border, height: '100%' }}
+              >
+                <Box
+                  component="img"
+                  src={g.src}
+                  alt={g.label}
+                  sx={{ display: 'block', width: '100%', aspectRatio: '16 / 9', objectFit: 'cover' }}
+                />
+                <Box sx={{ p: 1.5 }}>
+                  <Typography fontWeight={700} fontSize={14}>
+                    {g.label}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: terronex.muted, mt: 0.4 }}>
+                    {g.blurb}
+                  </Typography>
+                </Box>
+              </Paper>
+            </Grid>
+          ))}
         </Grid>
       </Container>
 
@@ -784,26 +854,26 @@ export default function HomePage() {
         <Container maxWidth="lg">
           <Grid container spacing={3} alignItems="center">
             <Grid item xs={12} md={7}>
-              <Typography variant="h5" fontWeight={700} gutterBottom>
-                One suite: Tractsource → ROWFlow
+              <Typography variant="h5" fontWeight={700} gutterBottom sx={{ fontFamily: FONT_SERIF }}>
+                One suite: Tractsource → ROWScope → ROWFlow
               </Typography>
               <Typography sx={{ color: terronex.muted, mb: 2 }}>
-                Pull county parcels with owners and geometry from Tractsource, hand off GeoJSON into
-                ROWFlow, and keep acquisition moving. Pro is a suite seat — ROWFlow plus Tractsource
-                access as the Terronex stack grows.
+                Tractsource owns facts. ROWScope owns the first number. ROWFlow lives the number —
+                negotiate, status, actuals vs seed. Pro is a suite seat.
               </Typography>
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                <Chip label="Tractsource extracts" variant="outlined" />
-                <Chip label="ROWFlow acquisition" variant="outlined" />
+                <Chip label="Tractsource package" variant="outlined" />
+                <Chip label="ROWScope seed" variant="outlined" />
+                <Chip label="No auto offers" variant="outlined" />
                 <Chip label="$99/mo Pro seat" color="primary" variant="outlined" />
               </Stack>
             </Grid>
             <Grid item xs={12} md={5}>
               <Stack spacing={1.5}>
                 {[
-                  'Extract AOI parcels in Tractsource',
-                  'Download ROWFlow-ready GeoJSON',
-                  'Import → map, matrix, offers, team',
+                  'Extract corridor package in Tractsource',
+                  'Freeze take + budget in ROWScope, download seed',
+                  'Import package then seed — agents still Create Take',
                 ].map((step, i) => (
                   <Paper
                     key={step}
@@ -824,8 +894,8 @@ export default function HomePage() {
                         borderRadius: 2,
                         display: 'grid',
                         placeItems: 'center',
-                        bgcolor: 'rgba(59,130,246,0.15)',
-                        color: '#93c5fd',
+                        bgcolor: terronex.accentSoft,
+                        color: 'primary.main',
                         fontWeight: 700,
                         flexShrink: 0,
                       }}
@@ -843,12 +913,12 @@ export default function HomePage() {
 
       {/* Pricing teaser */}
       <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
-        <Typography variant="h4" fontWeight={700} gutterBottom>
+        <Typography variant="h4" fontWeight={700} gutterBottom sx={{ fontFamily: FONT_SERIF }}>
           Simple pricing
         </Typography>
         <Typography sx={{ color: terronex.muted, mb: 3 }}>
           Pro is a flat <strong style={{ color: terronex.text }}>$99/month</strong> —
-          projects, full analytics, team invites, and suite access including Tractsource.
+          projects, team, Activity, Scope seed, and suite access including Tractsource.
         </Typography>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} justifyContent="center">
           <Button component={Link} href="/pricing" variant="contained" size="large">
