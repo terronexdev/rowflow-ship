@@ -163,7 +163,7 @@ export async function POST(
         <p><strong>${escapeHtml(String(inviter))}</strong> invited you to
         <strong>${escapeHtml(owner.name)}</strong> on ROWFlow
         as <strong>${escapeHtml(roleLabel)}</strong>.</p>
-        <p><a href="${inviteUrl}" style="display:inline-block;background:#2563eb;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600">
+        <p><a href="${inviteUrl}" style="display:inline-block;background:#0F766E;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600">
           Accept invite
         </a></p>
         <p style="font-size:13px;color:#64748b">Or paste this link:<br/>
