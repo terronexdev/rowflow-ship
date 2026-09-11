@@ -20,7 +20,8 @@ import {
   Typography,
 } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import { terronex } from '@/lib/theme';
+import { FONT_SERIF, terronex } from '@/lib/theme';
+import ThemeToggle from '@/components/layout/ThemeToggle';
 import { SUBSCRIPTION_TIERS } from '@/lib/constants/subscription';
 import { Suspense } from 'react';
 
@@ -75,6 +76,7 @@ function PricingInner() {
             ROWFlow
           </Button>
           <Stack direction="row" spacing={1}>
+            <ThemeToggle />
             <Button component={Link} href="/login" color="inherit" size="small">
               Sign in
             </Button>
@@ -86,7 +88,14 @@ function PricingInner() {
       </Box>
 
       <Container maxWidth="lg" sx={{ py: 8 }}>
-        <Typography variant="h3" fontWeight={700} align="center" gutterBottom letterSpacing="-0.03em">
+        <Typography
+          variant="h3"
+          fontWeight={700}
+          align="center"
+          gutterBottom
+          letterSpacing="-0.03em"
+          sx={{ fontFamily: FONT_SERIF }}
+        >
           Pro. Enterprise.
         </Typography>
         <Typography align="center" sx={{ color: terronex.muted, mb: 4, maxWidth: 560, mx: 'auto' }}>
@@ -122,7 +131,7 @@ function PricingInner() {
                 height: '100%',
                 bgcolor: terronex.panel,
                 borderColor: 'primary.main',
-                boxShadow: '0 0 0 1px rgba(59,130,246,0.4)',
+                boxShadow: `0 0 0 1px ${terronex.accent}`,
               }}
             >
               <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -212,8 +221,9 @@ function PricingInner() {
         </Grid>
 
         <Typography align="center" variant="body2" sx={{ color: terronex.faint, mt: 4 }}>
-          Questions? Email support@terronex.dev · <Link href="/terms">Terms</Link> ·{' '}
-          <Link href="/privacy">Privacy</Link>
+          Questions? Email support@terronex.dev ·{' '}
+          <Link href="/terms" style={{ color: 'var(--tx-accent)' }}>Terms</Link> ·{' '}
+          <Link href="/privacy" style={{ color: 'var(--tx-accent)' }}>Privacy</Link>
         </Typography>
       </Container>
     </Box>

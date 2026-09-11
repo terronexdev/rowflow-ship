@@ -17,6 +17,7 @@ import GoogleIcon from '@mui/icons-material/Google';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
+import ThemeToggle from '@/components/layout/ThemeToggle';
 
 function RegisterForm() {
   const router = useRouter();
@@ -104,7 +105,7 @@ function RegisterForm() {
           Create account
         </Typography>
         <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 2 }}>
-          Create your ROWFlow account — Google is fastest. Pro is $49.99/month after signup.
+          Create your ROWFlow account — Google is fastest. Pro is $99/month after signup.
         </Typography>
         {inviteToken && (
           <Alert severity="info" sx={{ mb: 2 }}>
@@ -170,12 +171,13 @@ function RegisterForm() {
             {loading ? 'Creating…' : inviteToken ? 'Accept invite & sign up' : 'Sign up with email'}
           </Button>
           <Typography variant="caption" color="text.secondary" display="block">
-            By continuing you agree to our <Link href="/terms">Terms of Service</Link> and{' '}
-            <Link href="/privacy">Privacy Policy</Link>.
+            By continuing you agree to our{' '}
+            <Link href="/terms" style={{ color: 'var(--tx-accent)' }}>Terms of Service</Link> and{' '}
+            <Link href="/privacy" style={{ color: 'var(--tx-accent)' }}>Privacy Policy</Link>.
           </Typography>
         </Box>
         <Typography variant="body2" align="center" sx={{ mt: 2 }}>
-          Already have an account? <Link href="/login">Sign in</Link>
+          Already have an account? <Link href="/login" style={{ color: 'var(--tx-accent)' }}>Sign in</Link>
         </Typography>
       </CardContent>
     </Card>
@@ -184,7 +186,10 @@ function RegisterForm() {
 
 export default function RegisterPage() {
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', p: 2 }}>
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', p: 2, position: 'relative' }}>
+      <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
+        <ThemeToggle />
+      </Box>
       <Suspense fallback={<CircularProgress />}>
         <RegisterForm />
       </Suspense>
