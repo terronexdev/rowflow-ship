@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { Box, Container, Typography, Stack, Divider } from '@mui/material';
-import { terronex } from '@/lib/theme';
+import { FONT_SERIF, terronex } from '@/lib/theme';
+import ThemeToggle from '@/components/layout/ThemeToggle';
 
 export function LegalChrome({
   title,
@@ -31,7 +32,8 @@ export function LegalChrome({
               legal
             </Typography>
           </Typography>
-          <Stack direction="row" spacing={2} sx={{ fontSize: 13, color: terronex.muted }}>
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ fontSize: 13, color: terronex.muted }}>
+            <ThemeToggle />
             <Link href="/" style={{ color: 'inherit' }}>
               Home
             </Link>
@@ -48,11 +50,11 @@ export function LegalChrome({
         </Container>
       </Box>
       <Container maxWidth="md" sx={{ py: 5 }}>
-        <Typography variant="h4" fontWeight={700} sx={{ letterSpacing: '-0.02em', mb: 1 }}>
+        <Typography variant="h4" fontWeight={700} sx={{ letterSpacing: '-0.02em', mb: 1, fontFamily: FONT_SERIF }}>
           {title}
         </Typography>
         <Typography variant="body2" sx={{ color: terronex.faint, mb: 3 }}>
-          Effective: July 29, 2026 · Terronex LLC · ROWFlow &amp; Tractsource
+          Effective: August 29, 2026 · Terronex LLC · ROWFlow &amp; Tractsource
         </Typography>
         <Box
           sx={{
@@ -67,7 +69,7 @@ export function LegalChrome({
         >
           These pages are the same Terronex suite legal terms used across ROWFlow and Tractsource.
           Contact{' '}
-          <a href="mailto:support@terronex.dev" style={{ color: '#93c5fd' }}>
+          <a href="mailto:support@terronex.dev" style={{ color: 'var(--tx-accent)' }}>
             support@terronex.dev
           </a>
           .
@@ -82,7 +84,7 @@ export function LegalChrome({
             '& ul': { pl: 2.5, mb: 1.5 },
             '& li': { mb: 0.75 },
             '& strong': { color: terronex.text, fontWeight: 600 },
-            '& a': { color: '#93c5fd' },
+            '& a': { color: 'var(--tx-accent)' },
           }}
         >
           {children}

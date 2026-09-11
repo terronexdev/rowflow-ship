@@ -70,7 +70,9 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTiers, SubscriptionLimits> =
       'Up to 200 parcels per project',
       'Team invites & roles',
       'PTS, title, acquisition & full status suite',
-      'Land payment matrix + compensation offers',
+      'Land payment matrix + Create Take (no auto offers)',
+      'ROWScope budget seed + per-parcel lines',
+      'Contacts, Activity, who+when attribution',
       'Labor tracking + reporting / analytics',
       'Document storage (10 GB)',
       'Includes Tractsource (suite seat)',
@@ -95,7 +97,7 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTiers, SubscriptionLimits> =
 };
 
 export const STRIPE_PRICE_IDS = {
-  /** Primary sold plan — $99/mo (Stripe default_price; env still supplies the price id) */
+  /** Primary sold plan — $99/mo · price_1TyfGsGZGFEXOFolGmkBYSBN */
   PRO: process.env.STRIPE_PRO_PRICE_ID || process.env.STRIPE_PRICE_ID || '',
   BASIC: process.env.STRIPE_BASIC_PRICE_ID || '',
 } as const;
