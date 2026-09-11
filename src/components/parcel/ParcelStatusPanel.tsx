@@ -1,14 +1,20 @@
 'use client';
 
+import { useState } from 'react';
 import {
   Box,
+  Collapse,
+  Divider,
   FormControl,
+  IconButton,
   InputLabel,
   MenuItem,
   Select,
   Typography,
-  Divider,
+  Link,
 } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { formatWhen } from '@/lib/attribution';
 import {
   getStatusColor,
   OVERALL_STATUSES,
@@ -62,7 +68,12 @@ export interface ParcelStatusValues {
 export interface ParcelIdentity {
   pin?: string | null;
   parcelNumber?: string | null;
+  easementNumber?: string | null;
   owner?: string | null;
+  ownerPhone?: string | null;
+  titledOwnerName?: string | null;
+  titledOwnerPhone?: string | null;
+  tenantName?: string | null;
   propertyAddress?: string | null;
   ownerAddress?: string | null;
   ownerCity?: string | null;
@@ -70,11 +81,37 @@ export interface ParcelIdentity {
   ownerZip?: string | null;
   county?: string | null;
   acreage?: number | null;
-  sequence?: number | null;
-  titledOwnerName?: string | null;
-  tenantName?: string | null;
-  lastCompensationTotal?: number | null;
-  lastCompensationOutsideRange?: boolean | null;
+  milepost?: number | null;
+  peAcres?: number | null;
+  tceAcres?: number | null;
+  landUseLabel?: string | null;
+  rangeText?: string | null;
+  lastOfferText?: string | null;
+  lastOfferOor?: boolean | null;
+  lastContact?: string | null;
+  followUp?: string | null;
+  followUpPastDue?: boolean | null;
+  mail?: string | null;
+  newStructureNumbers?: string | null;
+  existingStructureNumbers?: string | null;
+  titleText?: string | null;
+  erText?: string | null;
+  encroachText?: string | null;
+  notes?: {
+    id?: string;
+    content: string;
+    category?: string | null;
+    createdAt?: string | Date | null;
+    who?: string | null;
+    role?: string | null;
+  }[];
+  docs?: {
+    id: string;
+    name: string;
+    url: string;
+    createdAt?: string | Date | null;
+    who?: string | null;
+  }[];
 }
 
 export interface ProjectContext {
@@ -177,6 +214,58 @@ function StatusSelect({
   );
 }
 
+function FoldHeader({
+  label,
+  open,
+  onToggle,
+  summary,
+}: {
+  label: string;
+  open: boolean;
+  onToggle: () => void;
+  summary?: string | null;
+}) {
+  return (
+    <Box
+      onClick={onToggle}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        cursor: 'pointer',
+        userSelect: 'none',
+      }}
+    >
+      <Typography
+        variant="overline"
+        sx={{ letterSpacing: '0.08em', color: 'text.secondary', lineHeight: 1.2 }}
+      >
+        {label}
+      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
+        {!open && summary ? (
+          <Typography variant="caption" sx={{ fontWeight: 600, textTransform: 'none' }} noWrap>
+            {summary}
+          </Typography>
+        ) : null}
+        <IconButton
+          size="small"
+          aria-label={open ? `Collapse ${label}` : `Expand ${label}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggle();
+          }}
+        >
+          <ExpandMoreIcon
+            fontSize="small"
+            sx={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}
+          />
+        </IconButton>
+      </Box>
+    </Box>
+  );
+}
+
 export default function ParcelStatusPanel({
   values,
   onChange,
@@ -193,43 +282,70 @@ export default function ParcelStatusPanel({
   identity?: ParcelIdentity | null;
   title?: string;
 }) {
+  const [trackOpen, setTrackOpen] = useState(!compact);
+  const [identityOpen, setIdentityOpen] = useState(true);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [docsOpen, setDocsOpen] = useState(false);
+  const overall = String(values.status || 'NOT_STARTED').replaceAll('_', ' ');
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: compact ? 1.25 : 1.75 }}>
-      <Typography
-        variant="overline"
-        sx={{ letterSpacing: '0.08em', color: 'text.secondary', lineHeight: 1.2 }}
-      >
-        {title}
-      </Typography>
+      {compact ? (
+        <FoldHeader
+          label={title}
+          open={trackOpen}
+          onToggle={() => setTrackOpen((v) => !v)}
+          summary={overall}
+        />
+      ) : (
+        <Typography
+          variant="overline"
+          sx={{ letterSpacing: '0.08em', color: 'text.secondary', lineHeight: 1.2 }}
+        >
+          {title}
+        </Typography>
+      )}
 
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: compact ? '1fr 1fr' : { xs: '1fr', sm: '1fr 1fr' },
-          gap: compact ? 1 : 1.25,
-        }}
-      >
-        {PARCEL_STATUS_FIELDS.map((field) => (
-          <StatusSelect
-            key={field.key}
-            label={field.label}
-            value={String(values[field.key] || 'NOT_STARTED')}
-            options={field.options}
-            disabled={disabled}
-            onChange={(v) => onChange(field.key, v)}
-          />
-        ))}
-      </Box>
+      <Collapse in={!compact || trackOpen} unmountOnExit={false}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: compact ? '1fr 1fr' : { xs: '1fr', sm: '1fr 1fr' },
+            gap: compact ? 1 : 1.25,
+          }}
+        >
+          {PARCEL_STATUS_FIELDS.map((field) => (
+            <StatusSelect
+              key={field.key}
+              label={field.label}
+              value={String(values[field.key] || 'NOT_STARTED')}
+              options={field.options}
+              disabled={disabled}
+              onChange={(v) => onChange(field.key, v)}
+            />
+          ))}
+        </Box>
+      </Collapse>
 
       {identity && (
         <>
           <Divider sx={{ my: 0.5 }} />
-          <Typography
-            variant="overline"
-            sx={{ letterSpacing: '0.08em', color: 'text.secondary', lineHeight: 1.2 }}
-          >
-            Identity
-          </Typography>
+          {compact ? (
+            <FoldHeader
+              label="Identity"
+              open={identityOpen}
+              onToggle={() => setIdentityOpen((v) => !v)}
+              summary={identity.easementNumber || identity.pin || identity.titledOwnerName || identity.owner || undefined}
+            />
+          ) : (
+            <Typography
+              variant="overline"
+              sx={{ letterSpacing: '0.08em', color: 'text.secondary', lineHeight: 1.2 }}
+            >
+              Identity
+            </Typography>
+          )}
+          <Collapse in={!compact || identityOpen} unmountOnExit={false}>
           <Box
             sx={{
               display: 'grid',
@@ -238,38 +354,174 @@ export default function ParcelStatusPanel({
             }}
           >
             {[
-              { label: 'PIN', value: identity.pin },
-              { label: 'Parcel #', value: identity.parcelNumber },
-              { label: 'Owner', value: identity.owner },
-              { label: 'Situs', value: identity.propertyAddress },
-              {
-                label: 'Mail',
-                value: [identity.ownerAddress, identity.ownerCity, identity.ownerState, identity.ownerZip]
-                  .filter(Boolean)
-                  .join(', '),
-              },
-              { label: 'County', value: identity.county },
+              { label: 'Easement #', value: identity.easementNumber, span: false },
+              { label: 'PIN', value: identity.pin, span: false },
+              { label: 'County', value: identity.county, span: false },
               {
                 label: 'Acres',
                 value: identity.acreage != null ? String(identity.acreage) : null,
+                span: false,
               },
               {
-                label: 'Seq',
-                value: identity.sequence != null ? String(identity.sequence) : null,
+                label: 'Milepost',
+                value: identity.milepost != null ? String(identity.milepost) : null,
+                span: false,
               },
+              {
+                label: 'Titled owner',
+                value: [identity.titledOwnerName || identity.owner, identity.titledOwnerPhone || identity.ownerPhone]
+                  .filter(Boolean)
+                  .join(' · '),
+                span: true,
+              },
+              { label: 'Tenant', value: identity.tenantName, span: true },
+              { label: 'Mail', value: identity.mail, span: true },
+              {
+                label: 'Structures',
+                value: [
+                  identity.newStructureNumbers ? `New ${identity.newStructureNumbers}` : null,
+                  identity.existingStructureNumbers ? `Existing ${identity.existingStructureNumbers}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · '),
+                span: true,
+              },
+              { label: 'Title', value: identity.titleText, span: false },
+              { label: 'Existing rights', value: identity.erText, span: false },
+              { label: 'Encroach', value: identity.encroachText, span: true },
+              {
+                label: 'Last contact',
+                value: identity.lastContact
+                  ? `${identity.lastContact}${identity.followUp ? ` · FU ${identity.followUp}` : ''}${
+                      identity.followUpPastDue ? ' · past due' : ''
+                    }`
+                  : identity.followUp
+                    ? `FU ${identity.followUp}${identity.followUpPastDue ? ' · past due' : ''}`
+                    : null,
+                span: true,
+                warn: Boolean(identity.followUpPastDue),
+              },
+              {
+                label: 'PE / TCE',
+                value:
+                  identity.peAcres != null || identity.tceAcres != null
+                    ? `PE ${identity.peAcres != null ? identity.peAcres : '—'} ac · TCE ${
+                        identity.tceAcres != null ? identity.tceAcres : '—'
+                      } ac`
+                    : null,
+                span: false,
+              },
+              { label: 'Land use', value: identity.landUseLabel, span: false },
+              {
+                label: 'Range',
+                value: identity.rangeText || 'No range',
+                span: true,
+                muted: !identity.rangeText,
+              },
+              {
+                label: 'Last offer',
+                value: identity.lastOfferText,
+                span: true,
+                warn: Boolean(identity.lastOfferOor),
+              },
+              { label: 'Situs', value: identity.propertyAddress, span: true },
             ]
               .filter((row) => row.value)
               .map((row) => (
-                <Box key={row.label} sx={{ minWidth: 0 }}>
+                <Box key={row.label} sx={{ minWidth: 0, gridColumn: row.span ? '1 / -1' : undefined }}>
                   <Typography variant="caption" color="text.secondary" display="block">
                     {row.label}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap title={String(row.value)}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 500,
+                      color: row.warn ? 'warning.main' : row.muted ? 'text.secondary' : 'text.primary',
+                    }}
+                    noWrap
+                    title={String(row.value)}
+                  >
                     {row.value}
+                    {row.warn && row.label === 'Last offer' ? ' · OOR' : ''}
                   </Typography>
                 </Box>
               ))}
           </Box>
+          </Collapse>
+          {identity.notes && identity.notes.length > 0 ? (
+            <Box sx={{ mt: 1.25 }}>
+              {compact ? (
+                <FoldHeader
+                  label="Notes"
+                  open={notesOpen}
+                  onToggle={() => setNotesOpen((v) => !v)}
+                  summary={String(identity.notes.length)}
+                />
+              ) : (
+                <Typography
+                  variant="overline"
+                  sx={{ letterSpacing: '0.08em', color: 'text.secondary', lineHeight: 1.2 }}
+                >
+                  Notes
+                </Typography>
+              )}
+              <Collapse in={!compact || notesOpen} unmountOnExit={false}>
+              <Box sx={{ maxHeight: 160, overflowY: 'auto', pr: 0.5 }}>
+                {identity.notes.map((n, i) => (
+                  <Box key={n.id || i} sx={{ py: 0.75, borderBottom: 1, borderColor: 'divider' }}>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      {[n.who, n.role, n.createdAt ? formatWhen(n.createdAt) : null, n.category]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </Typography>
+                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                      {n.content}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+              </Collapse>
+            </Box>
+          ) : null}
+          {identity.docs && identity.docs.length > 0 ? (
+            <Box sx={{ mt: 1.25 }}>
+              {compact ? (
+                <FoldHeader
+                  label="Docs"
+                  open={docsOpen}
+                  onToggle={() => setDocsOpen((v) => !v)}
+                  summary={String(identity.docs.length)}
+                />
+              ) : (
+                <Typography
+                  variant="overline"
+                  sx={{ letterSpacing: '0.08em', color: 'text.secondary', lineHeight: 1.2 }}
+                >
+                  Docs
+                </Typography>
+              )}
+              <Collapse in={!compact || docsOpen} unmountOnExit={false}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                {identity.docs.map((d) => (
+                  <Box key={d.id}>
+                    <Link
+                      href={d.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      variant="body2"
+                      underline="hover"
+                    >
+                      {d.name}
+                    </Link>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      {[d.who, d.createdAt ? formatWhen(d.createdAt) : null].filter(Boolean).join(' · ')}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+              </Collapse>
+            </Box>
+          ) : null}
         </>
       )}
     </Box>
