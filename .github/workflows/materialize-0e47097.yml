@@ -1,0 +1,33 @@
+name: materialize-0e47097
+on:
+  push:
+    branches:
+      - sync-aesthetics-0e47097
+jobs:
+  materialize:
+    if: contains(github.event.head_commit.message, 'shipwright-sync-payload')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: sync-aesthetics-0e47097
+      - name: Replace working tree with 0e47097 archive
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          parts=(shipwright-sync/tree.b64.part*)
+          test "${#parts[@]}" -gt 0
+          cat "${parts[@]}" > /tmp/tree.b64
+          echo "assembled bytes=$(wc -c < /tmp/tree.b64)"
+          mkdir -p /tmp/newtree
+          base64 -d /tmp/tree.b64 | tar -xz -C /tmp/newtree
+          find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+          cp -a /tmp/newtree/. .
+          git config user.name "terronexdev"
+          git config user.email "terronexdev@users.noreply.github.com"
+          git add -A
+          git status --short | wc -l
+          git commit -m "sync: Terronex-dev/rowflow @ 0e47097b3b00bff4d3404f6c9df8117b239a8a3e (aesthetics branding)"
+          git push origin HEAD:sync-aesthetics-0e47097
