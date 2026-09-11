@@ -73,6 +73,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         unit: r.unit || 'PER_ACRE',
         minAmount: r.minAmount,
         maxAmount: r.maxAmount,
+        accessAmount: r.accessAmount ?? null,
         notes: r.notes || null,
         sortOrder: r.sortOrder ?? i,
       })),
