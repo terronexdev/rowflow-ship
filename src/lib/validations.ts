@@ -91,6 +91,7 @@ export const landUseEnum = z.enum([
 export const matrixUnitEnum = z.enum(['PER_ACRE', 'PER_SQFT', 'FLAT']);
 export const budgetCategoryEnum = z.enum([
   'LAND',
+  'ENCROACHMENTS',
   'PERMITS',
   'ROW_LABOR',
   'TITLE_LABOR',
@@ -117,6 +118,7 @@ export const matrixRowSchema = z.object({
   unit: matrixUnitEnum.default('PER_ACRE'),
   minAmount: z.number(),
   maxAmount: z.number(),
+  accessAmount: z.number().optional().nullable(),
   notes: z.string().optional().nullable(),
   sortOrder: z.number().int().optional(),
 });
