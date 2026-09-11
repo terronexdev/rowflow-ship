@@ -72,3 +72,18 @@ const ParcelMap = dynamic(() => import('@/components/map/ParcelMap'), {
     </Box>
   ),
 });
+
+type MapStatusTab =
+  | 'status'
+  | 'pts'
+  | 'title'
+  | 'survey'
+  | 'appraisal'
+  | 'acquisition'
+  | 'condemnation'
+  | 'special_conditions'
+  | 'damages'
+  | 'permit'
+  | 'existing_rights'
+  | 'parcel_class'
+  | 'encroachments';
