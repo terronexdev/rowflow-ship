@@ -17,6 +17,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import ThemeToggle from '@/components/layout/ThemeToggle';
 
 interface HeaderProps {
   onSidebarToggle: () => void;
@@ -82,6 +83,7 @@ export default function Header({
             </Typography>
           )}
         </Box>
+        <ThemeToggle />
         <Chip
           size="small"
           label="Terronex"
