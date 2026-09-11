@@ -260,12 +260,17 @@ model Parcel {
   parcelClass            ParcelClass               @default(UNKNOWN)
   /// Encroachment research / disposition rollup for this tract
   encroachmentStatus     EncroachmentStatus        @default(NOT_REVIEWED)
+  /// Desk encroach $ from ROWScope seed (not an offer)
+  encroachAmount         Decimal?                   @db.Decimal(12,2)
   sequence               Int?
   milepost               Float?
   geometry               Json?                      // GeoJSON geometry
   acreage                Float?
   totalAcres             Decimal?                   @db.Decimal(10,3)
   easementAcres          Decimal?                   @db.Decimal(10,3)
+  /// Proposed access (spurs), independent of PE. Seeded from ROWScope.
+  accessAcres            Decimal?                   @db.Decimal(10,3)
+  accessTemp             Boolean                    @default(false)
   tceAcres               Decimal?                   @db.Decimal(10,3)
   stationStart           String?
   stationEnd             String?
@@ -978,6 +983,7 @@ enum MatrixUnit {
 
 enum BudgetCategory {
   LAND
+  ENCROACHMENTS
   PERMITS
   ROW_LABOR
   TITLE_LABOR
@@ -1050,10 +1056,11 @@ enum CompensationDecision {
 }
 
 model LandPaymentMatrix {
-  id        String   @id @default(cuid())
-  projectId String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(cuid())
+  projectId      String   @unique
+  tempAccessPct  Float    @default(0.5)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   project Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
   rows    LandPaymentMatrixRow[]
@@ -1067,8 +1074,9 @@ model LandPaymentMatrixRow {
   landUse     LandUseCategory
   customLabel String?
   unit        MatrixUnit      @default(PER_ACRE)
-  minAmount   Decimal         @db.Decimal(12, 2)
-  maxAmount   Decimal         @db.Decimal(12, 2)
+  minAmount     Decimal         @db.Decimal(12, 2)
+  maxAmount     Decimal         @db.Decimal(12, 2)
+  accessAmount  Decimal?        @db.Decimal(12, 2)
   notes       String?
   sortOrder   Int             @default(0)
   createdAt   DateTime        @default(now())
