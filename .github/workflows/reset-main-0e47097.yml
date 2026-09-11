@@ -1,0 +1,36 @@
+name: reset-main-0e47097
+on:
+  push:
+    branches:
+      - cursor/reset-main-0e47097-d25b
+jobs:
+  reset-main:
+    if: contains(github.event.head_commit.message, 'shipwright-sync-payload')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cursor/reset-main-0e47097-d25b
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Materialize 0e47097 tree and force-push main
+        run: |
+          set -euo pipefail
+          parts=(shipwright-sync/tree.b64.part*)
+          test "${#parts[@]}" -gt 0
+          cat "${parts[@]}" > /tmp/tree.b64
+          echo "assembled bytes=$(wc -c < /tmp/tree.b64)"
+          mkdir -p /tmp/newtree
+          base64 -d /tmp/tree.b64 | tar -xz -C /tmp/newtree
+          test -f /tmp/newtree/package.json
+          find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+          cp -a /tmp/newtree/. .
+          git config user.name "terronexdev"
+          git config user.email "terronexdev@users.noreply.github.com"
+          git add -A
+          git status --short | wc -l
+          git commit -m "sync: identical tree to Terronex-dev/rowflow 0e47097b3b00bff4d3404f6c9df8117b239a8a3e"
+          git rev-parse HEAD^{tree}
+          git push --force origin HEAD:refs/heads/main
