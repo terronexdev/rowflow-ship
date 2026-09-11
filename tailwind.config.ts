@@ -9,16 +9,29 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        primary: {
-          main: '#4caf50',
-          light: '#81c784',
-          dark: '#388e3c',
+        teal: {
+          DEFAULT: '#0F766E',
+          soft: '#CCFBF1',
+          hover: '#0D9488',
         },
-        secondary: {
-          main: '#2196f3',
-          light: '#64b5f6',
-          dark: '#1976d2',
+        charcoal: '#15202B',
+        ink: '#0F172A',
+        slate: { DEFAULT: '#475569' },
+        snow: '#F8FAFC',
+        line: {
+          DEFAULT: '#E2E8F0',
+          soft: '#F1F5F9',
         },
+        ok: '#059669',
+        warn: '#D97706',
+        danger: '#DC2626',
+      },
+      fontFamily: {
+        sans: ['var(--font-sans)', 'Source Sans 3', 'system-ui', 'sans-serif'],
+        serif: ['var(--font-serif)', 'Source Serif 4', 'Georgia', 'serif'],
+      },
+      borderRadius: {
+        DEFAULT: '8px',
       },
     },
   },
@@ -29,4 +42,3 @@ const config: Config = {
 };
 
 export default config;
-

@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { SessionProvider, useSession } from 'next-auth/react';
 import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { terronexTheme } from '@/lib/theme';
+import { createLandTheme } from '@/lib/theme';
+import ColorSchemeProvider, { useColorScheme } from '@/components/providers/ColorSchemeProvider';
 
 function makeQueryClient() {
   return new QueryClient({
@@ -23,6 +24,18 @@ function makeQueryClient() {
   });
 }
 
+function ThemedApp({ children }: { children: React.ReactNode }) {
+  const { resolved } = useColorScheme();
+  const theme = useMemo(() => createLandTheme(resolved), [resolved]);
+
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      {children}
+    </ThemeProvider>
+  );
+}
+
 export default function AppProviders({ children }: { children: React.ReactNode }) {
   // One client per browser tree — avoid module singleton caching wrong shapes across navigations
   const [queryClient] = useState(makeQueryClient);
@@ -30,10 +43,9 @@ export default function AppProviders({ children }: { children: React.ReactNode }
   return (
     <SessionProvider refetchOnWindowFocus>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider theme={terronexTheme}>
-          <CssBaseline />
-          {children}
-        </ThemeProvider>
+        <ColorSchemeProvider>
+          <ThemedApp>{children}</ThemedApp>
+        </ColorSchemeProvider>
       </QueryClientProvider>
     </SessionProvider>
   );
