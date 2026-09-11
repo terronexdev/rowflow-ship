@@ -16,8 +16,20 @@ const projectInclude = {
       _count: { select: { notes: true, documents: true } },
       notes: {
         orderBy: { createdAt: 'desc' as const },
+        include: { author: { select: { id: true, name: true, email: true } } },
+      },
+      documents: {
+        orderBy: { createdAt: 'desc' as const },
+        include: { uploadedBy: { select: { id: true, name: true, email: true } } },
+      },
+      contactLogs: {
+        orderBy: { contactDate: 'desc' as const },
         take: 1,
-        select: { content: true, createdAt: true, category: true },
+        select: { contactDate: true, followUpDate: true },
+      },
+      encroachments: {
+        select: { id: true, encroachmentType: true, disposition: true },
+        orderBy: { sortOrder: 'asc' as const },
       },
       labels: { orderBy: { code: 'asc' as const } },
       existingRightLinks: {
