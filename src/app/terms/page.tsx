@@ -32,7 +32,7 @@ export default function TermsPage() {
       <h2>3. The Services</h2>
       <p>
         <strong>ROWFlow</strong> is right-of-way / land acquisition workspace software (projects,
-        parcels, map, statuses, compensation, labor, team, analytics).
+        parcels, map, statuses, compensation, labor, team, analytics, map notes, and job permits).
       </p>
       <p>
         <strong>Tractsource</strong> extracts and exports parcel data from third-party open GIS or
@@ -44,7 +44,7 @@ export default function TermsPage() {
       <h2>4. Subscriptions, pricing &amp; suite</h2>
       <ul>
         <li>
-          <strong>ROWFlow Pro</strong> — currently a flat <strong>$49.99/month</strong> subscription
+          <strong>ROWFlow Pro</strong> — currently a flat <strong>$99/month</strong> subscription
           (limits and features as shown in-app / pricing page).
         </li>
         <li>
@@ -94,18 +94,44 @@ export default function TermsPage() {
         Services. You represent you have rights to upload the data you provide.
       </p>
 
-      <h2>7. Third-party data &amp; disclaimers</h2>
+      <h2>7. Third-party data, GIS &amp; mapping disclaimer</h2>
+      <p>
+        ROWFlow and Tractsource display maps, parcel geometry, owner/situs fields, acreage, PINs,
+        basemaps, overlays, and crew map notes (wells, septic, crossings, sketches, and similar).
+        That material is <strong>for project planning and internal workflow only</strong>.
+      </p>
       <ul>
         <li>
-          Open GIS parcel/owner/address data is from third parties and may be incomplete, outdated,
-          or wrong.
+          Open GIS, county/assessor feeds, Esri and other basemaps, OpenStreetMap, user GeoJSON,
+          Tractsource extracts, and ROWFlow map notes may be incomplete, outdated, shifted, or wrong.
         </li>
-        <li>Outputs are for informational and project-support use only.</li>
         <li>
-          <strong>Not a legal survey or title product.</strong> Verify critical decisions with
-          primary sources and licensed professionals.
+          <strong>Not a land survey, ALTA/NSPS survey, legal description, plat, or as-built.</strong>
         </li>
-        <li>Map basemaps and boundary layers are provided by third parties under their terms.</li>
+        <li>
+          <strong>Not a title search, title commitment, title insurance, or evidence of ownership,
+          easement, or encumbrance.</strong>
+        </li>
+        <li>
+          Coordinates, acreage, PINs, owner names, and addresses are not certified. Verify with the
+          recorder, assessor, licensed surveyor, and title professional before offer, taking, or
+          construction.
+        </li>
+        <li>
+          Map notes (including RR / DOT / crossing pins) are crew marks. A linked job Permit is a
+          ROWFlow tracking record — <strong>not</strong> an application to, or approval from, an
+          agency until you actually file.
+        </li>
+        <li>Outputs are informational and project-support use only.</li>
+        <li>
+          Map basemaps and boundary layers are provided by third parties under their terms (including
+          Esri, OpenStreetMap contributors, and county GIS). You are responsible for compliant use
+          of exports and for source-license limits on redistribution.
+        </li>
+        <li>
+          Do not represent Tractsource/ROWFlow outputs as certified surveys, title opinions, or
+          official ownership records.
+        </li>
       </ul>
 
       <h2>8. Intellectual property</h2>

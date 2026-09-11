@@ -68,6 +68,7 @@ export const ASSIGNMENT_ROLE_VALUES = ASSIGNMENT_ROLE_OPTIONS.map((r) => r.value
 
 export const BUDGET_CATEGORY_OPTIONS = [
   { value: 'LAND', label: 'Land' },
+  { value: 'ENCROACHMENTS', label: 'Encroachments' },
   { value: 'PERMITS', label: 'Permits' },
   { value: 'ROW_LABOR', label: 'ROW Labor' },
   { value: 'TITLE_LABOR', label: 'Title Labor' },
