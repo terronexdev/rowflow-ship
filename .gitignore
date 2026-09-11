@@ -41,3 +41,6 @@ data/demo-goode-woodlands/corridor_extract/
 data/**/parcels-bundle.zip
 data/**/*.gpkg
 data/**/*.shp.zip
+
+# Paper-only Lite spec (not a product until named go)
+docs/ROWFLOW_LITE_SPEC.md

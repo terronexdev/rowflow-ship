@@ -1,186 +1,310 @@
 import { createTheme } from '@mui/material/styles';
+import type { Theme } from '@mui/material/styles';
+import type { ResolvedColorScheme } from './colorScheme';
 
-/** Terronex suite tokens — aligned with Tractsource app chrome */
-export const terronex = {
-  bg: '#050505',
-  panel: '#0a0f1d',
-  panelAlt: '#070b14',
-  border: 'rgba(255,255,255,0.08)',
-  text: '#e4e4e7',
-  muted: '#a1a1aa',
-  faint: '#52525b',
-  accent: '#3b82f6',
-  accentHover: '#2563eb',
-  ok: '#10b981',
-  warn: '#f59e0b',
-  danger: '#ef4444',
+/** Land brand tokens — terronex.land teal / snow / charcoal */
+export const land = {
+  teal: '#0F766E',
+  tealSoft: '#CCFBF1',
+  tealHover: '#0D9488',
+  charcoal: '#15202B',
+  ink: '#0F172A',
+  slate: '#475569',
+  snow: '#F8FAFC',
+  white: '#FFFFFF',
+  line: '#E2E8F0',
+  lineSoft: '#F1F5F9',
+  radius: 8,
+  ok: '#059669',
+  warn: '#D97706',
+  danger: '#DC2626',
+  darkBg: '#0B1220',
+  darkPanelAlt: '#1E293B',
+  darkMuted: '#94A3B8',
+  darkBorder: 'rgba(226,232,240,0.12)',
+  darkSoft: 'rgba(15,118,110,0.22)',
+  darkHover: '#14B8A6',
 } as const;
 
-export const terronexTheme = createTheme({
-  palette: {
-    mode: 'dark',
-    primary: {
-      main: terronex.accent,
-      light: '#60a5fa',
-      dark: terronex.accentHover,
-      contrastText: '#ffffff',
-    },
-    secondary: {
-      main: terronex.ok,
-      contrastText: '#04110c',
-    },
-    error: { main: terronex.danger },
-    warning: { main: terronex.warn },
-    success: { main: terronex.ok },
-    info: { main: terronex.accent },
-    background: {
-      default: terronex.bg,
-      paper: terronex.panel,
-    },
-    text: {
-      primary: terronex.text,
-      secondary: terronex.muted,
-      disabled: terronex.faint,
-    },
-    divider: terronex.border,
-    action: {
-      hover: 'rgba(59,130,246,0.08)',
-      selected: 'rgba(59,130,246,0.16)',
-    },
+/** Map tool / selection accent — teal retint of the former blue chrome */
+export const MAP_ACCENT = land.teal;
+
+export const FONT_SANS =
+  'var(--font-sans), "Source Sans 3", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+export const FONT_SERIF = 'var(--font-serif), "Source Serif 4", Georgia, "Times New Roman", serif';
+
+/**
+ * CSS-var aliases so marketing / chrome follow `data-theme` without a JS flash.
+ * Prefer these in `sx` for surfaces and copy.
+ */
+export const terronex = {
+  bg: 'var(--tx-bg)',
+  panel: 'var(--tx-paper)',
+  panelAlt: 'var(--tx-panel-alt)',
+  sidebar: 'var(--tx-sidebar)',
+  border: 'var(--tx-border)',
+  text: 'var(--tx-text)',
+  muted: 'var(--tx-muted)',
+  faint: 'var(--tx-faint)',
+  accent: 'var(--tx-accent)',
+  accentHover: 'var(--tx-accent-hover)',
+  accentSoft: 'var(--tx-accent-soft)',
+  ok: 'var(--tx-ok)',
+  warn: 'var(--tx-warn)',
+  danger: 'var(--tx-danger)',
+  shadow: 'var(--tx-shadow)',
+} as const;
+
+type ModePalette = {
+  bg: string;
+  paper: string;
+  panelAlt: string;
+  sidebar: string;
+  text: string;
+  muted: string;
+  faint: string;
+  border: string;
+  accent: string;
+  accentHover: string;
+  accentSoft: string;
+  actionHover: string;
+  actionSelected: string;
+  scrollbar: string;
+  scrollbarHover: string;
+};
+
+const palettes: Record<ResolvedColorScheme, ModePalette> = {
+  light: {
+    bg: land.snow,
+    paper: land.white,
+    panelAlt: land.lineSoft,
+    sidebar: land.lineSoft,
+    text: land.ink,
+    muted: land.slate,
+    faint: '#64748B',
+    border: land.line,
+    accent: land.teal,
+    accentHover: land.tealHover,
+    accentSoft: land.tealSoft,
+    actionHover: 'rgba(15,118,110,0.08)',
+    actionSelected: 'rgba(15,118,110,0.16)',
+    scrollbar: '#CBD5E1',
+    scrollbarHover: '#94A3B8',
   },
-  typography: {
-    fontFamily: '"Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-    h4: { fontWeight: 650, letterSpacing: '-0.02em' },
-    h5: { fontWeight: 650, letterSpacing: '-0.02em' },
-    h6: { fontWeight: 600, letterSpacing: '-0.01em' },
-    button: { textTransform: 'none', fontWeight: 600 },
-    overline: {
-      letterSpacing: '0.06em',
-      fontSize: '0.7rem',
-      color: terronex.muted,
-    },
+  dark: {
+    bg: land.darkBg,
+    paper: land.charcoal,
+    panelAlt: land.darkPanelAlt,
+    sidebar: land.charcoal,
+    text: land.snow,
+    muted: land.darkMuted,
+    faint: '#64748B',
+    border: land.darkBorder,
+    accent: land.teal,
+    accentHover: land.darkHover,
+    accentSoft: land.darkSoft,
+    actionHover: 'rgba(15,118,110,0.12)',
+    actionSelected: land.darkSoft,
+    scrollbar: '#334155',
+    scrollbarHover: '#475569',
   },
-  shape: { borderRadius: 10 },
-  components: {
-    MuiCssBaseline: {
-      styleOverrides: {
-        body: {
-          backgroundColor: terronex.bg,
-          color: terronex.text,
-        },
-        '::-webkit-scrollbar': { width: 8, height: 8 },
-        '::-webkit-scrollbar-track': { background: terronex.panelAlt },
-        '::-webkit-scrollbar-thumb': {
-          background: '#2a3548',
-          borderRadius: 4,
-        },
-        '::-webkit-scrollbar-thumb:hover': { background: '#3b4a63' },
+};
+
+export function createLandTheme(mode: ResolvedColorScheme): Theme {
+  const p = palettes[mode];
+
+  return createTheme({
+    palette: {
+      mode,
+      primary: {
+        main: p.accent,
+        light: p.accentHover,
+        dark: land.teal,
+        contrastText: land.white,
+      },
+      secondary: {
+        main: land.ok,
+        contrastText: land.white,
+      },
+      error: { main: land.danger },
+      warning: { main: land.warn },
+      success: { main: land.ok },
+      info: { main: p.accent },
+      background: {
+        default: p.bg,
+        paper: p.paper,
+      },
+      text: {
+        primary: p.text,
+        secondary: p.muted,
+        disabled: p.faint,
+      },
+      divider: p.border,
+      action: {
+        hover: p.actionHover,
+        selected: p.actionSelected,
       },
     },
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          backgroundImage: 'none',
-          border: `1px solid ${terronex.border}`,
-        },
+    typography: {
+      fontFamily: FONT_SANS,
+      h4: { fontWeight: 650, letterSpacing: '-0.02em' },
+      h5: { fontWeight: 650, letterSpacing: '-0.02em' },
+      h6: { fontWeight: 600, letterSpacing: '-0.01em' },
+      button: { textTransform: 'none', fontWeight: 600 },
+      overline: {
+        letterSpacing: '0.06em',
+        fontSize: '0.7rem',
+        color: p.muted,
       },
     },
-    MuiAppBar: {
-      styleOverrides: {
-        root: {
-          backgroundImage: 'none',
-          backgroundColor: terronex.panel,
-          borderBottom: `1px solid ${terronex.border}`,
-          color: terronex.text,
+    shape: { borderRadius: land.radius },
+    components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          body: {
+            backgroundColor: 'var(--tx-bg)',
+            color: 'var(--tx-text)',
+            fontFamily: FONT_SANS,
+          },
+          '::-webkit-scrollbar': { width: 8, height: 8 },
+          '::-webkit-scrollbar-track': { background: 'var(--tx-panel-alt)' },
+          '::-webkit-scrollbar-thumb': {
+            background: p.scrollbar,
+            borderRadius: 4,
+          },
+          '::-webkit-scrollbar-thumb:hover': { background: p.scrollbarHover },
         },
       },
-    },
-    MuiDrawer: {
-      styleOverrides: {
-        paper: {
-          backgroundColor: terronex.panel,
-          borderRight: `1px solid ${terronex.border}`,
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundImage: 'none',
+            backgroundColor: 'var(--tx-paper)',
+            border: '1px solid var(--tx-border)',
+          },
         },
       },
-    },
-    MuiButton: {
-      defaultProps: { size: 'small' },
-      styleOverrides: {
-        root: {
-          borderRadius: 8,
-          minHeight: 36,
-          px: 1.5,
-        },
-        contained: {
-          boxShadow: 'none',
-          '&:hover': { boxShadow: 'none' },
-        },
-        outlined: {
-          borderColor: terronex.border,
+      MuiAppBar: {
+        styleOverrides: {
+          root: {
+            backgroundImage: 'none',
+            backgroundColor: 'var(--tx-paper)',
+            borderBottom: '1px solid var(--tx-border)',
+            color: 'var(--tx-text)',
+            boxShadow: 'var(--tx-shadow)',
+          },
         },
       },
-    },
-    MuiIconButton: {
-      defaultProps: { size: 'small' },
-    },
-    MuiTextField: {
-      defaultProps: { size: 'small', variant: 'outlined' },
-    },
-    MuiFormControl: {
-      defaultProps: { size: 'small' },
-    },
-    MuiSelect: {
-      defaultProps: { size: 'small' },
-      styleOverrides: {
-        select: {
-          py: 1,
+      MuiDrawer: {
+        styleOverrides: {
+          paper: {
+            backgroundColor: 'var(--tx-sidebar)',
+            borderRight: '1px solid var(--tx-border)',
+          },
         },
       },
-    },
-    MuiChip: {
-      styleOverrides: {
-        root: {
-          fontWeight: 600,
-          borderRadius: 6,
+      MuiButton: {
+        defaultProps: { size: 'small' },
+        styleOverrides: {
+          root: {
+            borderRadius: land.radius,
+            minHeight: 36,
+            px: 1.5,
+          },
+          contained: {
+            boxShadow: 'none',
+            '&:hover': { boxShadow: 'none' },
+          },
+          outlined: {
+            borderColor: 'var(--tx-border)',
+          },
         },
       },
-    },
-    MuiListItemButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 8,
-          margin: '2px 8px',
-          '&.Mui-selected': {
-            backgroundColor: 'rgba(59,130,246,0.16)',
-            '&:hover': { backgroundColor: 'rgba(59,130,246,0.22)' },
+      MuiIconButton: {
+        defaultProps: { size: 'small' },
+      },
+      MuiTextField: {
+        defaultProps: { size: 'small', variant: 'outlined' },
+      },
+      MuiFormControl: {
+        defaultProps: { size: 'small' },
+      },
+      MuiOutlinedInput: {
+        styleOverrides: {
+          root: {
+            '&:hover .MuiOutlinedInput-notchedOutline': {
+              borderColor: 'var(--tx-accent-hover)',
+            },
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+              borderColor: 'var(--tx-accent)',
+              borderWidth: 2,
+            },
+          },
+        },
+      },
+      MuiSelect: {
+        defaultProps: { size: 'small' },
+        styleOverrides: {
+          select: {
+            py: 1,
+          },
+        },
+      },
+      MuiChip: {
+        styleOverrides: {
+          root: {
+            fontWeight: 600,
+            borderRadius: 6,
+          },
+        },
+      },
+      MuiListItemButton: {
+        styleOverrides: {
+          root: {
+            borderRadius: land.radius,
+            margin: '2px 8px',
+            '&.Mui-selected': {
+              backgroundColor: 'var(--tx-accent-soft)',
+              '&:hover': { backgroundColor: 'var(--tx-action-selected)' },
+            },
+          },
+        },
+      },
+      MuiTab: {
+        styleOverrides: {
+          root: {
+            textTransform: 'none',
+            minHeight: 42,
+            fontWeight: 600,
+          },
+        },
+      },
+      MuiToolbar: {
+        styleOverrides: {
+          root: {
+            minHeight: 56,
+            gap: 8,
+            flexWrap: 'wrap',
+          },
+        },
+      },
+      MuiAlert: {
+        styleOverrides: {
+          root: {
+            border: '1px solid var(--tx-border)',
+          },
+        },
+      },
+      MuiLink: {
+        styleOverrides: {
+          root: {
+            color: 'var(--tx-accent)',
           },
         },
       },
     },
-    MuiTab: {
-      styleOverrides: {
-        root: {
-          textTransform: 'none',
-          minHeight: 42,
-          fontWeight: 600,
-        },
-      },
-    },
-    MuiToolbar: {
-      styleOverrides: {
-        root: {
-          minHeight: 56,
-          gap: 8,
-          flexWrap: 'wrap',
-        },
-      },
-    },
-    MuiAlert: {
-      styleOverrides: {
-        root: {
-          border: `1px solid ${terronex.border}`,
-        },
-      },
-    },
-  },
-});
+  });
+}
+
+/** Default (light-first) theme for static imports */
+export const terronexTheme = createLandTheme('light');
