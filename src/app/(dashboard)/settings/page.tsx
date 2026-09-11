@@ -261,7 +261,7 @@ export default function SettingsPage() {
                       )}
                     </Box>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      Pro is $49.99/month · Terronex emails are comped Pro
+                      Pro is $99/month · Terronex emails are comped Pro
                     </Typography>
                   </Grid>
 
@@ -333,7 +333,7 @@ export default function SettingsPage() {
                           else alert(data.error || 'Checkout unavailable');
                         }}
                       >
-                        Upgrade to Pro · $49.99/mo
+                        Upgrade to Pro · $99/mo
                       </Button>
                     )}
                     <Button
